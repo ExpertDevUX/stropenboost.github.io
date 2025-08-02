@@ -1,0 +1,1169 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Settings - StrophenBoost{% endblock %}
+
+{% block extra_head %}
+<style>
+.settings-card {
+    transition: all 0.3s ease;
+    border: none;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.settings-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.settings-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: 10px 10px 0 0;
+}
+
+.nav-pills .nav-link {
+    border-radius: 25px;
+    margin: 0.25rem;
+    transition: all 0.3s ease;
+}
+
+.nav-pills .nav-link.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+}
+
+.form-switch .form-check-input:checked {
+    background-color: #667eea;
+    border-color: #667eea;
+}
+
+.social-link-item {
+    background: #f8f9ff;
+    border: 1px solid #e0e7ff;
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.social-link-item:hover {
+    background: #f0f4ff;
+    transform: translateX(5px);
+}
+
+.btn-gradient {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    color: white;
+    transition: all 0.3s ease;
+}
+
+.btn-gradient:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    color: white;
+}
+
+.streaming-config {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 15px;
+    padding: 2rem;
+}
+
+.streaming-config .form-control {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.streaming-config .form-control::placeholder {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.streaming-config .form-control:focus {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.4);
+    color: white;
+    box-shadow: 0 0 0 0.2rem rgba(255, 255, 255, 0.25);
+}
+
+.streaming-config .form-label {
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 500;
+}
+
+[data-bs-theme="dark"] .social-link-item {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-bs-theme="dark"] .social-link-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card settings-card">
+                <div class="settings-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2 class="mb-1">
+                                <i class="fas fa-cogs me-3"></i>Admin Settings
+                            </h2>
+                            <p class="mb-0 opacity-75">Configure system settings and platform customization</p>
+                        </div>
+                        <div class="text-end">
+                            <small class="opacity-75">Last updated: {{ current_time.strftime('%B %d, %Y at %I:%M %p') }}</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body p-0">
+                    <!-- Navigation Tabs -->
+                    <div class="px-4 pt-4">
+                        <ul class="nav nav-pills mb-4" id="settingsTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="general-tab" data-bs-toggle="pill" data-bs-target="#general" type="button" role="tab">
+                                    <i class="fas fa-sliders-h me-2"></i>General
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="security-tab" data-bs-toggle="pill" data-bs-target="#security" type="button" role="tab">
+                                    <i class="fas fa-shield-alt me-2"></i>Security
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="streaming-tab" data-bs-toggle="pill" data-bs-target="#streaming" type="button" role="tab">
+                                    <i class="fas fa-broadcast-tower me-2"></i>Streaming
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="integrations-tab" data-bs-toggle="pill" data-bs-target="#integrations" type="button" role="tab">
+                                    <i class="fas fa-plug me-2"></i>Integrations
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="footer-tab" data-bs-toggle="pill" data-bs-target="#footer" type="button" role="tab">
+                                    <i class="fas fa-link me-2"></i>Footer & Social
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="pages-tab" data-bs-toggle="pill" data-bs-target="#pages" type="button" role="tab">
+                                    <i class="fas fa-file-alt me-2"></i>Pages
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Tab Content -->
+                    <div class="tab-content px-4 pb-4" id="settingsTabContent">
+                        <!-- General Settings -->
+                        <div class="tab-pane fade show active" id="general" role="tabpanel">
+                            <div class="row">
+                                <div class="col-lg-8">
+                                    <h4 class="mb-4">
+                                        <i class="fas fa-globe me-2 text-primary"></i>Platform Configuration
+                                    </h4>
+                                    <form id="generalSettingsForm">
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="siteName" class="form-label">Site Name</label>
+                                                <input type="text" class="form-control" id="siteName" name="site_name" value="{{ settings.site_name or 'StrophenBoost' }}" required>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="siteTagline" class="form-label">Site Tagline</label>
+                                                <input type="text" class="form-control" id="siteTagline" name="site_tagline" value="{{ settings.site_tagline or 'Professional Live Streaming Platform' }}">
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label for="siteDescription" class="form-label">Site Description</label>
+                                            <textarea class="form-control" id="siteDescription" name="site_description" rows="3">{{ settings.site_description or 'Advanced live streaming platform with comprehensive multi-protocol content delivery and creator tools.' }}</textarea>
+                                        </div>
+                                        
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="contactEmail" class="form-label">Contact Email</label>
+                                                <input type="email" class="form-control" id="contactEmail" name="contact_email" value="{{ settings.contact_email or 'admin@strophenboost.com' }}">
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="supportEmail" class="form-label">Support Email</label>
+                                                <input type="email" class="form-control" id="supportEmail" name="support_email" value="{{ settings.support_email or 'support@strophenboost.com' }}">
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="row">
+                                            <div class="col-md-4 mb-3">
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input" type="checkbox" id="allowRegistration" name="allow_registration" {{ 'checked' if settings.allow_registration != False else '' }}>
+                                                    <label class="form-check-label" for="allowRegistration">
+                                                        Allow New Registrations
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input" type="checkbox" id="requireEmailVerification" name="require_email_verification" {{ 'checked' if settings.require_email_verification else '' }}>
+                                                    <label class="form-check-label" for="requireEmailVerification">
+                                                        Require Email Verification
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4 mb-3">
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input" type="checkbox" id="enableChat" name="enable_chat" {{ 'checked' if settings.enable_chat != False else '' }}>
+                                                    <label class="form-check-label" for="enableChat">
+                                                        Enable Live Chat
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="d-flex justify-content-end">
+                                            <button type="submit" class="btn btn-gradient">
+                                                <i class="fas fa-save me-2"></i>Save General Settings
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                                
+                                <div class="col-lg-4">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <h5 class="card-title">
+                                                <i class="fas fa-chart-bar me-2 text-info"></i>Platform Statistics
+                                            </h5>
+                                            <div class="row text-center">
+                                                <div class="col-6 mb-3">
+                                                    <div class="fw-bold text-primary fs-4">{{ stats.total_users or 0 }}</div>
+                                                    <small class="text-muted">Total Users</small>
+                                                </div>
+                                                <div class="col-6 mb-3">
+                                                    <div class="fw-bold text-success fs-4">{{ stats.total_streams or 0 }}</div>
+                                                    <small class="text-muted">Total Streams</small>
+                                                </div>
+                                                <div class="col-6">
+                                                    <div class="fw-bold text-warning fs-4">{{ stats.live_streams or 0 }}</div>
+                                                    <small class="text-muted">Live Now</small>
+                                                </div>
+                                                <div class="col-6">
+                                                    <div class="fw-bold text-info fs-4">{{ stats.total_views or 0 }}</div>
+                                                    <small class="text-muted">Total Views</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Security Settings -->
+                        <div class="tab-pane fade" id="security" role="tabpanel">
+                            <h4 class="mb-4">
+                                <i class="fas fa-lock me-2 text-danger"></i>Security & Authentication
+                            </h4>
+                            
+                            <div class="row">
+                                <div class="col-lg-6">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h5 class="mb-0">
+                                                <i class="fas fa-key me-2"></i>Change Admin Password
+                                            </h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <form id="passwordChangeForm">
+                                                <div class="mb-3">
+                                                    <label for="currentPassword" class="form-label">Current Password</label>
+                                                    <input type="password" class="form-control" id="currentPassword" name="current_password" required>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label for="newPassword" class="form-label">New Password</label>
+                                                    <input type="password" class="form-control" id="newPassword" name="new_password" required>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label for="confirmPassword" class="form-label">Confirm New Password</label>
+                                                    <input type="password" class="form-control" id="confirmPassword" name="confirm_password" required>
+                                                </div>
+                                                <button type="submit" class="btn btn-danger">
+                                                    <i class="fas fa-shield-alt me-2"></i>Update Password
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-lg-6">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h5 class="mb-0">
+                                                <i class="fas fa-cog me-2"></i>Security Settings
+                                            </h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <form id="securitySettingsForm">
+                                                <div class="mb-3">
+                                                    <div class="form-check form-switch">
+                                                        <input class="form-check-input" type="checkbox" id="enable2FA" name="enable_2fa" {{ 'checked' if settings.enable_2fa else '' }}>
+                                                        <label class="form-check-label" for="enable2FA">
+                                                            Enable Two-Factor Authentication
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="mb-3">
+                                                    <div class="form-check form-switch">
+                                                        <input class="form-check-input" type="checkbox" id="forceHTTPS" name="force_https" {{ 'checked' if settings.force_https else '' }}>
+                                                        <label class="form-check-label" for="forceHTTPS">
+                                                            Force HTTPS
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="mb-3">
+                                                    <label for="sessionTimeout" class="form-label">Session Timeout (minutes)</label>
+                                                    <input type="number" class="form-control" id="sessionTimeout" name="session_timeout" value="{{ settings.session_timeout or 120 }}" min="15" max="1440">
+                                                </div>
+                                                
+                                                <div class="mb-3">
+                                                    <label for="maxLoginAttempts" class="form-label">Max Login Attempts</label>
+                                                    <input type="number" class="form-control" id="maxLoginAttempts" name="max_login_attempts" value="{{ settings.max_login_attempts or 5 }}" min="3" max="10">
+                                                </div>
+                                                
+                                                <button type="submit" class="btn btn-gradient">
+                                                    <i class="fas fa-save me-2"></i>Save Security Settings
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Streaming Settings -->
+                        <div class="tab-pane fade" id="streaming" role="tabpanel">
+                            <div class="streaming-config">
+                                <h4 class="mb-4">
+                                    <i class="fas fa-satellite-dish me-2"></i>Advanced Streaming Configuration
+                                </h4>
+                                
+                                <form id="streamingSettingsForm">
+                                    <div class="row">
+                                        <div class="col-lg-6">
+                                            <h5 class="mb-3">
+                                                <i class="fas fa-rocket me-2"></i>Low Latency Settings
+                                            </h5>
+                                            
+                                            <div class="mb-3">
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input" type="checkbox" id="enableLowLatency" name="enable_low_latency" {{ 'checked' if settings.enable_low_latency else '' }}>
+                                                    <label class="form-check-label" for="enableLowLatency">
+                                                        Enable Ultra-Low Latency Streaming
+                                                    </label>
+                                                </div>
+                                                <small class="form-text text-white-50">Reduces latency to 50-200ms using WebRTC</small>
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <label for="webrtcServer" class="form-label">WebRTC Server URL</label>
+                                                <input type="url" class="form-control" id="webrtcServer" name="webrtc_server" 
+                                                       value="{{ settings.webrtc_server or 'wss://webrtc.strophenboost.com' }}" 
+                                                       placeholder="wss://your-webrtc-server.com">
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <label for="stunServer" class="form-label">STUN Server</label>
+                                                <input type="text" class="form-control" id="stunServer" name="stun_server" 
+                                                       value="{{ settings.stun_server or 'stun:stun.l.google.com:19302' }}" 
+                                                       placeholder="stun:stun.server.com:19302">
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-lg-6">
+                                            <h5 class="mb-3">
+                                                <i class="fas fa-video me-2"></i>Stream Quality Settings
+                                            </h5>
+                                            
+                                            <div class="mb-3">
+                                                <label for="maxBitrate" class="form-label">Maximum Bitrate (kbps)</label>
+                                                <input type="number" class="form-control" id="maxBitrate" name="max_bitrate" 
+                                                       value="{{ settings.max_bitrate or 8000 }}" min="1000" max="20000">
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <label for="maxresolution" class="form-label">Maximum Resolution</label>
+                                                <select class="form-select" id="maxResolution" name="max_resolution">
+                                                    <option value="720p" {{ 'selected' if settings.max_resolution == '720p' else '' }}>720p HD</option>
+                                                    <option value="1080p" {{ 'selected' if settings.max_resolution == '1080p' else '' }}>1080p Full HD</option>
+                                                    <option value="1440p" {{ 'selected' if settings.max_resolution == '1440p' else '' }}>1440p 2K</option>
+                                                    <option value="4k" {{ 'selected' if settings.max_resolution == '4k' else '' }}>4K Ultra HD</option>
+                                                </select>
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <label for="adaptiveBitrate" class="form-label">Adaptive Bitrate Levels</label>
+                                                <input type="text" class="form-control" id="adaptiveBitrate" name="adaptive_bitrate" 
+                                                       value="{{ settings.adaptive_bitrate or '500,1000,2000,4000,8000' }}" 
+                                                       placeholder="500,1000,2000,4000,8000">
+                                                <small class="form-text text-white-50">Comma-separated bitrate levels in kbps</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-lg-6">
+                                            <h5 class="mb-3">
+                                                <i class="fas fa-server me-2"></i>RTMP Configuration
+                                            </h5>
+                                            
+                                            <div class="mb-3">
+                                                <label for="rtmpServer" class="form-label">RTMP Server URL</label>
+                                                <input type="text" class="form-control" id="rtmpServer" name="rtmp_server" 
+                                                       value="{{ settings.rtmp_server or 'rtmp://localhost:1935/live' }}" 
+                                                       placeholder="rtmp://server:1935/live">
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input" type="checkbox" id="enableRTMPS" name="enable_rtmps" {{ 'checked' if settings.enable_rtmps else '' }}>
+                                                    <label class="form-check-label" for="enableRTMPS">
+                                                        Enable RTMPS (Secure RTMP)
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-lg-6">
+                                            <h5 class="mb-3">
+                                                <i class="fas fa-play-circle me-2"></i>HLS/DASH Settings
+                                            </h5>
+                                            
+                                            <div class="mb-3">
+                                                <label for="hlsSegmentDuration" class="form-label">HLS Segment Duration (seconds)</label>
+                                                <input type="number" class="form-control" id="hlsSegmentDuration" name="hls_segment_duration" 
+                                                       value="{{ settings.hls_segment_duration or 4 }}" min="2" max="10">
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <label for="dashSegmentDuration" class="form-label">DASH Segment Duration (seconds)</label>
+                                                <input type="number" class="form-control" id="dashSegmentDuration" name="dash_segment_duration" 
+                                                       value="{{ settings.dash_segment_duration or 2 }}" min="1" max="10">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="d-flex justify-content-end mt-4">
+                                        <button type="submit" class="btn btn-light">
+                                            <i class="fas fa-broadcast-tower me-2"></i>Save Streaming Settings
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                        
+                        <!-- Third-party Integrations -->
+                        <div class="tab-pane fade" id="integrations" role="tabpanel">
+                            <h4 class="mb-4">
+                                <i class="fas fa-puzzle-piece me-2 text-success"></i>Third-party Integrations
+                            </h4>
+                            
+                            <div class="row">
+                                <div class="col-lg-6 mb-4">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h5 class="mb-0">
+                                                <i class="fab fa-google me-2 text-danger"></i>Google Analytics
+                                            </h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <form id="googleAnalyticsForm">
+                                                <div class="mb-3">
+                                                    <div class="form-check form-switch">
+                                                        <input class="form-check-input" type="checkbox" id="enableGA" name="enable_ga" {{ 'checked' if settings.enable_ga else '' }}>
+                                                        <label class="form-check-label" for="enableGA">
+                                                            Enable Google Analytics
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label for="gaTrackingId" class="form-label">Tracking ID</label>
+                                                    <input type="text" class="form-control" id="gaTrackingId" name="ga_tracking_id" 
+                                                           value="{{ settings.ga_tracking_id or '' }}" placeholder="G-XXXXXXXXXX">
+                                                </div>
+                                                <button type="submit" class="btn btn-outline-danger">
+                                                    <i class="fas fa-save me-2"></i>Save GA Settings
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-lg-6 mb-4">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h5 class="mb-0">
+                                                <i class="fab fa-discord me-2 text-primary"></i>Discord Integration
+                                            </h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <form id="discordForm">
+                                                <div class="mb-3">
+                                                    <div class="form-check form-switch">
+                                                        <input class="form-check-input" type="checkbox" id="enableDiscord" name="enable_discord" {{ 'checked' if settings.enable_discord else '' }}>
+                                                        <label class="form-check-label" for="enableDiscord">
+                                                            Enable Discord Webhooks
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label for="discordWebhook" class="form-label">Webhook URL</label>
+                                                    <input type="url" class="form-control" id="discordWebhook" name="discord_webhook" 
+                                                           value="{{ settings.discord_webhook or '' }}" placeholder="https://discord.com/api/webhooks/...">
+                                                </div>
+                                                <button type="submit" class="btn btn-outline-primary">
+                                                    <i class="fas fa-save me-2"></i>Save Discord Settings
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-lg-6 mb-4">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h5 class="mb-0">
+                                                <i class="fab fa-paypal me-2 text-info"></i>Payment Integration
+                                            </h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <form id="paymentForm">
+                                                <div class="mb-3">
+                                                    <div class="form-check form-switch">
+                                                        <input class="form-check-input" type="checkbox" id="enablePayments" name="enable_payments" {{ 'checked' if settings.enable_payments else '' }}>
+                                                        <label class="form-check-label" for="enablePayments">
+                                                            Enable Payment Processing
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label for="paymentProvider" class="form-label">Payment Provider</label>
+                                                    <select class="form-select" id="paymentProvider" name="payment_provider">
+                                                        <option value="stripe" {{ 'selected' if settings.payment_provider == 'stripe' else '' }}>Stripe</option>
+                                                        <option value="paypal" {{ 'selected' if settings.payment_provider == 'paypal' else '' }}>PayPal</option>
+                                                        <option value="square" {{ 'selected' if settings.payment_provider == 'square' else '' }}>Square</option>
+                                                    </select>
+                                                </div>
+                                                <button type="submit" class="btn btn-outline-info">
+                                                    <i class="fas fa-save me-2"></i>Save Payment Settings
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-lg-6 mb-4">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h5 class="mb-0">
+                                                <i class="fas fa-envelope me-2 text-warning"></i>Email Service
+                                            </h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <form id="emailForm">
+                                                <div class="mb-3">
+                                                    <div class="form-check form-switch">
+                                                        <input class="form-check-input" type="checkbox" id="enableEmail" name="enable_email" {{ 'checked' if settings.enable_email else '' }}>
+                                                        <label class="form-check-label" for="enableEmail">
+                                                            Enable Email Service
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label for="emailProvider" class="form-label">Email Provider</label>
+                                                    <select class="form-select" id="emailProvider" name="email_provider">
+                                                        <option value="sendgrid" {{ 'selected' if settings.email_provider == 'sendgrid' else '' }}>SendGrid</option>
+                                                        <option value="mailgun" {{ 'selected' if settings.email_provider == 'mailgun' else '' }}>Mailgun</option>
+                                                        <option value="ses" {{ 'selected' if settings.email_provider == 'ses' else '' }}>Amazon SES</option>
+                                                        <option value="smtp" {{ 'selected' if settings.email_provider == 'smtp' else '' }}>SMTP</option>
+                                                    </select>
+                                                </div>
+                                                <button type="submit" class="btn btn-outline-warning">
+                                                    <i class="fas fa-save me-2"></i>Save Email Settings
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Footer & Social Links -->
+                        <div class="tab-pane fade" id="footer" role="tabpanel">
+                            <h4 class="mb-4">
+                                <i class="fas fa-share-alt me-2 text-info"></i>Footer & Social Media Configuration
+                            </h4>
+                            
+                            <div class="row">
+                                <div class="col-lg-8">
+                                    <div class="card mb-4">
+                                        <div class="card-header">
+                                            <h5 class="mb-0">
+                                                <i class="fas fa-edit me-2"></i>Footer Content
+                                            </h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <form id="footerContentForm">
+                                                <div class="mb-3">
+                                                    <label for="footerDescription" class="form-label">Footer Description</label>
+                                                    <textarea class="form-control" id="footerDescription" name="footer_description" rows="3">{{ settings.footer_description or 'StrophenBoost - Professional live streaming platform with advanced features for content creators and viewers.' }}</textarea>
+                                                </div>
+                                                
+                                                <div class="mb-3">
+                                                    <label for="copyrightText" class="form-label">Copyright Text</label>
+                                                    <input type="text" class="form-control" id="copyrightText" name="copyright_text" 
+                                                           value="{{ settings.copyright_text or '© 2025 StrophenBoost. All rights reserved.' }}">
+                                                </div>
+                                                
+                                                <div class="mb-3">
+                                                    <label for="developerAttribution" class="form-label">Developer Attribution</label>
+                                                    <input type="text" class="form-control" id="developerAttribution" name="developer_attribution" 
+                                                           value="{{ settings.developer_attribution or 'Powered by Expert Dev UX' }}">
+                                                </div>
+                                                
+                                                <button type="submit" class="btn btn-gradient">
+                                                    <i class="fas fa-save me-2"></i>Save Footer Content
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h5 class="mb-0">
+                                                <i class="fas fa-link me-2"></i>Social Media Links
+                                            </h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <form id="socialLinksForm">
+                                                <div id="socialLinksContainer">
+                                                    {% set social_links = settings.social_links or [] %}
+                                                    {% if social_links %}
+                                                        {% for link in social_links %}
+                                                        <div class="social-link-item">
+                                                            <div class="row align-items-center">
+                                                                <div class="col-md-3">
+                                                                    <select class="form-select" name="social_platform[]">
+                                                                        <option value="twitter" {{ 'selected' if link.platform == 'twitter' else '' }}>Twitter</option>
+                                                                        <option value="facebook" {{ 'selected' if link.platform == 'facebook' else '' }}>Facebook</option>
+                                                                        <option value="instagram" {{ 'selected' if link.platform == 'instagram' else '' }}>Instagram</option>
+                                                                        <option value="youtube" {{ 'selected' if link.platform == 'youtube' else '' }}>YouTube</option>
+                                                                        <option value="twitch" {{ 'selected' if link.platform == 'twitch' else '' }}>Twitch</option>
+                                                                        <option value="discord" {{ 'selected' if link.platform == 'discord' else '' }}>Discord</option>
+                                                                        <option value="linkedin" {{ 'selected' if link.platform == 'linkedin' else '' }}>LinkedIn</option>
+                                                                        <option value="github" {{ 'selected' if link.platform == 'github' else '' }}>GitHub</option>
+                                                                    </select>
+                                                                </div>
+                                                                <div class="col-md-7">
+                                                                    <input type="url" class="form-control" name="social_url[]" value="{{ link.url }}" placeholder="https://...">
+                                                                </div>
+                                                                <div class="col-md-2">
+                                                                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeSocialLink(this)">
+                                                                        <i class="fas fa-trash"></i>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        {% endfor %}
+                                                    {% else %}
+                                                        <div class="social-link-item">
+                                                            <div class="row align-items-center">
+                                                                <div class="col-md-3">
+                                                                    <select class="form-select" name="social_platform[]">
+                                                                        <option value="twitter">Twitter</option>
+                                                                        <option value="facebook">Facebook</option>
+                                                                        <option value="instagram">Instagram</option>
+                                                                        <option value="youtube">YouTube</option>
+                                                                        <option value="twitch">Twitch</option>
+                                                                        <option value="discord">Discord</option>
+                                                                        <option value="linkedin">LinkedIn</option>
+                                                                        <option value="github">GitHub</option>
+                                                                    </select>
+                                                                </div>
+                                                                <div class="col-md-7">
+                                                                    <input type="url" class="form-control" name="social_url[]" placeholder="https://...">
+                                                                </div>
+                                                                <div class="col-md-2">
+                                                                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeSocialLink(this)">
+                                                                        <i class="fas fa-trash"></i>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                                
+                                                <div class="d-flex justify-content-between mt-3">
+                                                    <button type="button" class="btn btn-outline-primary" onclick="addSocialLink()">
+                                                        <i class="fas fa-plus me-2"></i>Add Social Link
+                                                    </button>
+                                                    <button type="submit" class="btn btn-gradient">
+                                                        <i class="fas fa-save me-2"></i>Save Social Links
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-lg-4">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h5 class="mb-0">
+                                                <i class="fas fa-eye me-2"></i>Preview
+                                            </h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="bg-dark text-white p-3 rounded">
+                                                <div class="text-center mb-3">
+                                                    <h6>StrophenBoost</h6>
+                                                    <small id="previewDescription">Professional live streaming platform with advanced features.</small>
+                                                </div>
+                                                <div class="d-flex justify-content-center gap-3 mb-3" id="previewSocialLinks">
+                                                    <i class="fab fa-twitter text-info"></i>
+                                                    <i class="fab fa-facebook text-primary"></i>
+                                                    <i class="fab fa-instagram text-danger"></i>
+                                                    <i class="fab fa-youtube text-danger"></i>
+                                                </div>
+                                                <div class="text-center">
+                                                    <small id="previewCopyright">© 2025 StrophenBoost. All rights reserved.</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Page Information -->
+                        <div class="tab-pane fade" id="pages" role="tabpanel">
+                            <h4 class="mb-4">
+                                <i class="fas fa-file-alt me-2 text-success"></i>Page Content Management
+                            </h4>
+                            
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-md-6 mb-4">
+                                                    <div class="card">
+                                                        <div class="card-header">
+                                                            <h6 class="mb-0">About Page</h6>
+                                                        </div>
+                                                        <div class="card-body">
+                                                            <form id="aboutPageForm">
+                                                                <div class="mb-3">
+                                                                    <label for="aboutTitle" class="form-label">Page Title</label>
+                                                                    <input type="text" class="form-control" id="aboutTitle" name="about_title" 
+                                                                           value="{{ settings.about_title or 'About StrophenBoost' }}">
+                                                                </div>
+                                                                <div class="mb-3">
+                                                                    <label for="aboutContent" class="form-label">Content</label>
+                                                                    <textarea class="form-control" id="aboutContent" name="about_content" rows="4">{{ settings.about_content or 'StrophenBoost is a professional live streaming platform designed for content creators and viewers.' }}</textarea>
+                                                                </div>
+                                                                <button type="submit" class="btn btn-outline-success btn-sm">
+                                                                    <i class="fas fa-save me-2"></i>Update About
+                                                                </button>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="col-md-6 mb-4">
+                                                    <div class="card">
+                                                        <div class="card-header">
+                                                            <h6 class="mb-0">Privacy Policy</h6>
+                                                        </div>
+                                                        <div class="card-body">
+                                                            <form id="privacyPageForm">
+                                                                <div class="mb-3">
+                                                                    <label for="privacyTitle" class="form-label">Page Title</label>
+                                                                    <input type="text" class="form-control" id="privacyTitle" name="privacy_title" 
+                                                                           value="{{ settings.privacy_title or 'Privacy Policy' }}">
+                                                                </div>
+                                                                <div class="mb-3">
+                                                                    <label for="privacyContent" class="form-label">Content</label>
+                                                                    <textarea class="form-control" id="privacyContent" name="privacy_content" rows="4">{{ settings.privacy_content or 'Your privacy is important to us. This policy explains how we collect and use your information.' }}</textarea>
+                                                                </div>
+                                                                <button type="submit" class="btn btn-outline-success btn-sm">
+                                                                    <i class="fas fa-save me-2"></i>Update Privacy
+                                                                </button>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="col-md-6 mb-4">
+                                                    <div class="card">
+                                                        <div class="card-header">
+                                                            <h6 class="mb-0">Terms of Service</h6>
+                                                        </div>
+                                                        <div class="card-body">
+                                                            <form id="termsPageForm">
+                                                                <div class="mb-3">
+                                                                    <label for="termsTitle" class="form-label">Page Title</label>
+                                                                    <input type="text" class="form-control" id="termsTitle" name="terms_title" 
+                                                                           value="{{ settings.terms_title or 'Terms of Service' }}">
+                                                                </div>
+                                                                <div class="mb-3">
+                                                                    <label for="termsContent" class="form-label">Content</label>
+                                                                    <textarea class="form-control" id="termsContent" name="terms_content" rows="4">{{ settings.terms_content or 'By using our service, you agree to these terms and conditions.' }}</textarea>
+                                                                </div>
+                                                                <button type="submit" class="btn btn-outline-success btn-sm">
+                                                                    <i class="fas fa-save me-2"></i>Update Terms
+                                                                </button>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="col-md-6 mb-4">
+                                                    <div class="card">
+                                                        <div class="card-header">
+                                                            <h6 class="mb-0">Contact Information</h6>
+                                                        </div>
+                                                        <div class="card-body">
+                                                            <form id="contactPageForm">
+                                                                <div class="mb-3">
+                                                                    <label for="contactTitle" class="form-label">Page Title</label>
+                                                                    <input type="text" class="form-control" id="contactTitle" name="contact_title" 
+                                                                           value="{{ settings.contact_title or 'Contact Us' }}">
+                                                                </div>
+                                                                <div class="mb-3">
+                                                                    <label for="contactAddress" class="form-label">Address</label>
+                                                                    <textarea class="form-control" id="contactAddress" name="contact_address" rows="2">{{ settings.contact_address or '123 Streaming St, Digital City, DC 12345' }}</textarea>
+                                                                </div>
+                                                                <div class="mb-3">
+                                                                    <label for="contactPhone" class="form-label">Phone</label>
+                                                                    <input type="tel" class="form-control" id="contactPhone" name="contact_phone" 
+                                                                           value="{{ settings.contact_phone or '+1 (555) 123-4567' }}">
+                                                                </div>
+                                                                <button type="submit" class="btn btn-outline-success btn-sm">
+                                                                    <i class="fas fa-save me-2"></i>Update Contact
+                                                                </button>
+                                                            </form>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Settings management functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize all forms
+    initializeSettingsForms();
+    
+    // Setup form validation
+    setupFormValidation();
+    
+    // Initialize preview updates
+    initializePreviewUpdates();
+});
+
+function initializeSettingsForms() {
+    // General Settings Form
+    document.getElementById('generalSettingsForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        saveSettings('general', this);
+    });
+    
+    // Password Change Form
+    document.getElementById('passwordChangeForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        changeAdminPassword(this);
+    });
+    
+    // Security Settings Form
+    document.getElementById('securitySettingsForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        saveSettings('security', this);
+    });
+    
+    // Streaming Settings Form
+    document.getElementById('streamingSettingsForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        saveSettings('streaming', this);
+    });
+    
+    // Social Links Form
+    document.getElementById('socialLinksForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        saveSocialLinks(this);
+    });
+    
+    // Footer Content Form
+    document.getElementById('footerContentForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        saveSettings('footer', this);
+    });
+    
+    // Page content forms
+    ['about', 'privacy', 'terms', 'contact'].forEach(page => {
+        const form = document.getElementById(page + 'PageForm');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                savePageContent(page, this);
+            });
+        }
+    });
+    
+    // Integration forms
+    ['googleAnalytics', 'discord', 'payment', 'email'].forEach(integration => {
+        const form = document.getElementById(integration + 'Form');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                saveSettings('integration_' + integration, this);
+            });
+        }
+    });
+}
+
+function saveSettings(category, form) {
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Saving...';
+    submitBtn.disabled = true;
+    
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+    
+    fetch('/admin/settings/' + category, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', data.message || 'Settings saved successfully!');
+        } else {
+            showAlert('danger', data.error || 'Failed to save settings');
+        }
+    })
+    .catch(error => {
+        showAlert('danger', 'Error saving settings: ' + error.message);
+    })
+    .finally(() => {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    });
+}
+
+function changeAdminPassword(form) {
+    const newPassword = form.new_password.value;
+    const confirmPassword = form.confirm_password.value;
+    
+    if (newPassword !== confirmPassword) {
+        showAlert('danger', 'New password and confirmation do not match');
+        return;
+    }
+    
+    if (newPassword.length < 8) {
+        showAlert('danger', 'Password must be at least 8 characters long');
+        return;
+    }
+    
+    saveSettings('password', form);
+}
+
+function saveSocialLinks(form) {
+    const platforms = form.querySelectorAll('select[name="social_platform[]"]');
+    const urls = form.querySelectorAll('input[name="social_url[]"]');
+    
+    const socialLinks = [];
+    for (let i = 0; i < platforms.length; i++) {
+        if (urls[i].value.trim()) {
+            socialLinks.push({
+                platform: platforms[i].value,
+                url: urls[i].value.trim()
+            });
+        }
+    }
+    
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Saving...';
+    submitBtn.disabled = true;
+    
+    fetch('/admin/settings/social-links', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ social_links: socialLinks })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', 'Social links saved successfully!');
+            updateSocialPreview(socialLinks);
+        } else {
+            showAlert('danger', data.error || 'Failed to save social links');
+        }
+    })
+    .catch(error => {
+        showAlert('danger', 'Error saving social links: ' + error.message);
+    })
+    .finally(() => {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    });
+}
+
+function savePageContent(page, form) {
+    saveSettings('page_' + page, form);
+}
+
+function addSocialLink() {
+    const container = document.getElementById('socialLinksContainer');
+    const newLink = document.createElement('div');
+    newLink.className = 'social-link-item';
+    newLink.innerHTML = `
+        <div class="row align-items-center">
+            <div class="col-md-3">
+                <select class="form-select" name="social_platform[]">
+                    <option value="twitter">Twitter</option>
+                    <option value="facebook">Facebook</option>
+                    <option value="instagram">Instagram</option>
+                    <option value="youtube">YouTube</option>
+                    <option value="twitch">Twitch</option>
+                    <option value="discord">Discord</option>
+                    <option value="linkedin">LinkedIn</option>
+                    <option value="github">GitHub</option>
+                </select>
+            </div>
+            <div class="col-md-7">
+                <input type="url" class="form-control" name="social_url[]" placeholder="https://...">
+            </div>
+            <div class="col-md-2">
+                <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeSocialLink(this)">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    `;
+    container.appendChild(newLink);
+}
+
+function removeSocialLink(button) {
+    button.closest('.social-link-item').remove();
+}
+
+function setupFormValidation() {
+    // Add custom validation for password requirements
+    const passwordInput = document.getElementById('newPassword');
+    if (passwordInput) {
+        passwordInput.addEventListener('input', function() {
+            const password = this.value;
+            const confirmInput = document.getElementById('confirmPassword');
+            
+            if (password.length < 8) {
+                this.setCustomValidity('Password must be at least 8 characters long');
+            } else {
+                this.setCustomValidity('');
+            }
+            
+            if (confirmInput.value && password !== confirmInput.value) {
+                confirmInput.setCustomValidity('Passwords do not match');
+            } else {
+                confirmInput.setCustomValidity('');
+            }
+        });
+    }
+}
+
+function initializePreviewUpdates() {
+    // Update footer preview when content changes
+    const footerDescription = document.getElementById('footerDescription');
+    const copyrightText = document.getElementById('copyrightText');
+    
+    if (footerDescription) {
+        footerDescription.addEventListener('input', function() {
+            document.getElementById('previewDescription').textContent = this.value;
+        });
+    }
+    
+    if (copyrightText) {
+        copyrightText.addEventListener('input', function() {
+            document.getElementById('previewCopyright').textContent = this.value;
+        });
+    }
+}
+
+function updateSocialPreview(socialLinks) {
+    const previewContainer = document.getElementById('previewSocialLinks');
+    previewContainer.innerHTML = '';
+    
+    socialLinks.forEach(link => {
+        const icon = document.createElement('i');
+        icon.className = `fab fa-${link.platform}`;
+        
+        // Set platform-specific colors
+        switch(link.platform) {
+            case 'twitter': icon.classList.add('text-info'); break;
+            case 'facebook': icon.classList.add('text-primary'); break;
+            case 'instagram': icon.classList.add('text-danger'); break;
+            case 'youtube': icon.classList.add('text-danger'); break;
+            case 'twitch': icon.classList.add('text-purple'); break;
+            case 'discord': icon.classList.add('text-primary'); break;
+            case 'linkedin': icon.classList.add('text-info'); break;
+            case 'github': icon.classList.add('text-dark'); break;
+        }
+        
+        previewContainer.appendChild(icon);
+    });
+}
+
+function showAlert(type, message) {
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alert.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(alert);
+    
+    setTimeout(() => {
+        if (alert.parentNode) {
+            alert.remove();
+        }
+    }, 5000);
+}
+</script>
+{% endblock %}

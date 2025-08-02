@@ -1,0 +1,1514 @@
+{% extends "base.html" %}
+
+{% block title %}Profile - {{ user.username }} - StrophenBoost{% endblock %}
+
+{% block extra_head %}
+<style>
+.profile-hero {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    position: relative;
+    overflow: hidden;
+    min-height: 350px;
+    border-radius: 0 0 30px 30px;
+    margin-bottom: 3rem;
+}
+
+.profile-hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='4'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    animation: float 20s infinite linear;
+}
+
+@keyframes float {
+    0% { transform: translateX(-100px); }
+    100% { transform: translateX(100px); }
+}
+
+.profile-content {
+    position: relative;
+    z-index: 2;
+    padding: 3rem 0;
+    color: white;
+}
+
+.profile-avatar-container {
+    position: relative;
+    display: inline-block;
+    margin-bottom: 2rem;
+}
+
+.profile-avatar {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    border: 6px solid rgba(255,255,255,0.3);
+    object-fit: cover;
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.profile-avatar:hover {
+    transform: scale(1.05);
+    border-color: rgba(255,255,255,0.6);
+}
+
+.avatar-placeholder {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    border: 6px solid rgba(255,255,255,0.3);
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 4rem;
+    color: rgba(255,255,255,0.8);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.profile-info h1 {
+    font-size: 3rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+}
+
+.profile-info .subtitle {
+    font-size: 1.2rem;
+    opacity: 0.9;
+    margin-bottom: 1rem;
+}
+
+.profile-bio {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    max-width: 600px;
+    line-height: 1.6;
+}
+
+.profile-badges {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin: 1.5rem 0;
+}
+
+.profile-badge {
+    background: rgba(255,255,255,0.2);
+    backdrop-filter: blur(10px);
+    padding: 0.5rem 1rem;
+    border-radius: 25px;
+    border: 1px solid rgba(255,255,255,0.3);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+.profile-badge:hover {
+    background: rgba(255,255,255,0.3);
+    transform: translateY(-2px);
+}
+
+.profile-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 2rem;
+    margin: 3rem 0;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 20px;
+    padding: 2rem;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    border: none;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.stat-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+    color: white;
+    font-size: 1.5rem;
+}
+
+.stat-number {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: #2d3748;
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.stat-label {
+    color: #718096;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 0.9rem;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 3rem 0 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.section-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.section-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin: 0;
+}
+
+.stream-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 2rem;
+    margin-top: 2rem;
+}
+
+.stream-card {
+    background: white;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    border: none;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.stream-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+}
+
+.stream-thumbnail {
+    height: 180px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.stream-thumbnail::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='20' cy='20' r='2'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+.stream-content {
+    padding: 1.5rem;
+    position: relative;
+}
+
+.stream-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
+}
+
+.stream-description {
+    color: #718096;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    margin-bottom: 1rem;
+}
+
+.stream-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e2e8f0;
+}
+
+.stream-views {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #718096;
+    font-size: 0.9rem;
+}
+
+.stream-status {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.status-live {
+    background: #f56565;
+    color: white;
+}
+
+.status-offline {
+    background: #e2e8f0;
+    color: #718096;
+}
+
+.edit-profile-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 10;
+    background: rgba(255,255,255,0.2);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 25px;
+    transition: all 0.3s ease;
+}
+
+.edit-profile-btn:hover {
+    background: rgba(255,255,255,0.3);
+    transform: translateY(-2px);
+    color: white;
+}
+
+.profile-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.action-btn {
+    padding: 1rem 2rem;
+    border-radius: 25px;
+    border: none;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-primary-gradient {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-primary-gradient:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+}
+
+.btn-outline-gradient {
+    background: transparent;
+    color: #667eea;
+    border: 2px solid #667eea;
+}
+
+.btn-outline-gradient:hover {
+    background: #667eea;
+    color: white;
+    transform: translateY(-2px);
+}
+
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: #718096;
+}
+
+.empty-state-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: #f7fafc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 2rem;
+    font-size: 2rem;
+    color: #a0aec0;
+}
+
+/* Dark mode styles */
+[data-bs-theme="dark"] .stat-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-bs-theme="dark"] .stat-number {
+    color: #e2e8f0;
+}
+
+[data-bs-theme="dark"] .stat-label {
+    color: #a0aec0;
+}
+
+[data-bs-theme="dark"] .section-title {
+    color: #e2e8f0;
+}
+
+[data-bs-theme="dark"] .section-header {
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-bs-theme="dark"] .stream-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-bs-theme="dark"] .stream-title {
+    color: #e2e8f0;
+}
+
+[data-bs-theme="dark"] .stream-description {
+    color: #a0aec0;
+}
+
+[data-bs-theme="dark"] .stream-meta {
+    border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-bs-theme="dark"] .stream-views {
+    color: #a0aec0;
+}
+
+[data-bs-theme="dark"] .empty-state-icon {
+    background: rgba(255, 255, 255, 0.05);
+    color: #4a5568;
+}
+
+[data-bs-theme="dark"] .empty-state {
+    color: #a0aec0;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .profile-hero {
+        min-height: 300px;
+        margin-bottom: 2rem;
+    }
+    
+    .profile-content {
+        padding: 2rem 0;
+    }
+    
+    .profile-info h1 {
+        font-size: 2rem;
+    }
+    
+    .profile-avatar,
+    .avatar-placeholder {
+        width: 120px;
+        height: 120px;
+    }
+    
+    .stat-number {
+        font-size: 2rem;
+    }
+    
+    .profile-badges {
+        justify-content: center;
+    }
+    
+    .profile-actions {
+        flex-direction: column;
+    }
+    
+    .edit-profile-btn {
+        position: static;
+        margin-top: 1rem;
+        align-self: flex-start;
+    }
+}
+
+/* Animation for stats counting */
+@keyframes countUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.stat-card {
+    animation: countUp 0.6s ease-out;
+}
+
+.stat-card:nth-child(1) { animation-delay: 0.1s; }
+.stat-card:nth-child(2) { animation-delay: 0.2s; }
+.stat-card:nth-child(3) { animation-delay: 0.3s; }
+.stat-card:nth-child(4) { animation-delay: 0.4s; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Profile Hero Section -->
+<div class="profile-hero">
+    <div class="container">
+        <div class="profile-content text-center">
+            <button class="btn edit-profile-btn" onclick="toggleEditMode()">
+                <i class="fas fa-edit me-2"></i>Edit Profile
+            </button>
+            
+            <div class="profile-avatar-container">
+                {% if user.avatar_url %}
+                    <img src="{{ user.avatar_url }}" alt="{{ user.username }}" class="profile-avatar" id="profileAvatar">
+                {% else %}
+                    <div class="avatar-placeholder">
+                        <i class="fas fa-user"></i>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="profile-info">
+                <h1>{{ user.display_name or user.username }}</h1>
+                <p class="subtitle">@{{ user.username }}</p>
+                
+                {% if user.bio %}
+                    <p class="profile-bio">{{ user.bio }}</p>
+                {% endif %}
+                
+                <div class="profile-badges">
+                    <div class="profile-badge">
+                        <i class="fas fa-{{ 'broadcast-tower' if user.is_broadcaster else 'eye' }}"></i>
+                        <span>{{ 'Broadcaster' if user.is_broadcaster else 'Viewer' }}</span>
+                    </div>
+                    {% if user.is_verified %}
+                        <div class="profile-badge">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Verified</span>
+                        </div>
+                    {% endif %}
+                    {% if user.created_at %}
+                        <div class="profile-badge">
+                            <i class="fas fa-calendar-alt"></i>
+                            <span>Joined {{ user.created_at.strftime('%B %Y') }}</span>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="profile-actions">
+                    {% if user.is_broadcaster %}
+                        <button class="btn action-btn btn-primary-gradient" onclick="location.href='/dashboard'">
+                            <i class="fas fa-tachometer-alt"></i>
+                            <span>Dashboard</span>
+                        </button>
+                        <button class="btn action-btn btn-outline-gradient" onclick="location.href='/start-stream'">
+                            <i class="fas fa-broadcast-tower"></i>
+                            <span>Start Stream</span>
+                        </button>
+                    {% else %}
+                        <button class="btn action-btn btn-primary-gradient" onclick="followUser()">
+                            <i class="fas fa-heart"></i>
+                            <span>Follow</span>
+                        </button>
+                        <button class="btn action-btn btn-outline-gradient" onclick="shareProfile()">
+                            <i class="fas fa-share"></i>
+                            <span>Share</span>
+                        </button>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <!-- Statistics Grid -->
+    <div class="profile-stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-video"></i>
+            </div>
+            <span class="stat-number" data-target="{{ user.streams|length if user.streams else 0 }}">0</span>
+            <span class="stat-label">Total Streams</span>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-eye"></i>
+            </div>
+            <span class="stat-number" data-target="{{ user.total_views or 0 }}">0</span>
+            <span class="stat-label">Total Views</span>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-heart"></i>
+            </div>
+            <span class="stat-number" data-target="{{ user.followers_count or 0 }}">0</span>
+            <span class="stat-label">Followers</span>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-clock"></i>
+            </div>
+            <span class="stat-number" data-target="{{ user.total_watch_time or 0 }}">0</span>
+            <span class="stat-label">Hours Watched</span>
+        </div>
+    </div>
+    
+    <!-- Recent Streams Section -->
+    {% if user.is_broadcaster and user.streams %}
+        <div class="section-header">
+            <div class="section-icon">
+                <i class="fas fa-video"></i>
+            </div>
+            <h2 class="section-title">Recent Streams</h2>
+        </div>
+        
+        <div class="stream-grid">
+            {% for stream in user.streams[:6] %}
+                <div class="stream-card">
+                    <div class="stream-thumbnail">
+                        <div class="position-relative w-100 h-100">
+                            <div class="d-flex align-items-center justify-content-center h-100">
+                                <div class="text-center">
+                                    <i class="fas fa-play-circle fa-3x mb-2"></i>
+                                    <p class="mb-0">{{ stream.title }}</p>
+                                </div>
+                            </div>
+                            {% if stream.is_live %}
+                                <span class="position-absolute top-0 start-0 status-live m-2">
+                                    <i class="fas fa-circle me-1"></i>LIVE
+                                </span>
+                            {% else %}
+                                <span class="position-absolute top-0 start-0 status-offline m-2">
+                                    OFFLINE
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="stream-content">
+                        <h5 class="stream-title">{{ stream.title }}</h5>
+                        {% if stream.description %}
+                            <p class="stream-description">
+                                {{ stream.description[:80] }}{% if stream.description|length > 80 %}...{% endif %}
+                            </p>
+                        {% endif %}
+                        <div class="stream-meta">
+                            <div class="stream-views">
+                                <i class="fas fa-eye"></i>
+                                <span>{{ stream.total_views or 0 }} views</span>
+                            </div>
+                            <a href="{{ url_for('view_stream', stream_id=stream.id) }}" class="btn btn-sm btn-primary">
+                                {% if stream.is_live %}
+                                    <i class="fas fa-play me-1"></i>Watch
+                                {% else %}
+                                    <i class="fas fa-info me-1"></i>Details
+                                {% endif %}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% elif user.is_broadcaster %}
+        <div class="section-header">
+            <div class="section-icon">
+                <i class="fas fa-video"></i>
+            </div>
+            <h2 class="section-title">Your Streams</h2>
+        </div>
+        
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <i class="fas fa-video"></i>
+            </div>
+            <h3>No streams yet</h3>
+            <p>Start your first stream to share your content with the world!</p>
+            <button class="btn btn-primary-gradient action-btn" onclick="location.href='/dashboard'">
+                <i class="fas fa-broadcast-tower"></i>
+                <span>Start Streaming</span>
+            </button>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Edit Profile Modal -->
+<div class="modal fade" id="editProfileModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-edit me-2"></i>Edit Profile
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editProfileForm">
+                    <div class="mb-3">
+                        <label for="editDisplayName" class="form-label">Display Name</label>
+                        <input type="text" class="form-control" id="editDisplayName" name="display_name" 
+                               value="{{ user.display_name or user.username }}" maxlength="50">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="editBio" class="form-label">Bio</label>
+                        <textarea class="form-control" id="editBio" name="bio" rows="4" maxlength="500"
+                                  placeholder="Tell us about yourself...">{{ user.bio or '' }}</textarea>
+                        <small class="text-muted">Maximum 500 characters</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="editEmail" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="editEmail" name="email" 
+                               value="{{ user.email }}" required>
+                    </div>
+                    
+                    {% if user.is_broadcaster %}
+                    <div class="mb-3">
+                        <label for="editStreamTitle" class="form-label">Default Stream Title</label>
+                        <input type="text" class="form-control" id="editStreamTitle" name="default_stream_title" 
+                               value="{{ user.default_stream_title or '' }}" maxlength="100">
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mb-3">
+                        <label for="avatarUpload" class="form-label">Profile Picture</label>
+                        <input type="file" class="form-control" id="avatarUpload" name="avatar" accept="image/*">
+                        <small class="text-muted">Maximum file size: 2MB. Supported formats: JPG, PNG, GIF</small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveProfile()">
+                    <i class="fas fa-save me-1"></i>Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Profile functionality
+let isEditMode = false;
+
+function toggleEditMode() {
+    const modal = new bootstrap.Modal(document.getElementById('editProfileModal'));
+    modal.show();
+}
+
+function saveProfile() {
+    const form = document.getElementById('editProfileForm');
+    const formData = new FormData(form);
+    
+    const submitBtn = document.querySelector('#editProfileModal .btn-primary');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Saving...';
+    submitBtn.disabled = true;
+    
+    fetch('/api/profile/update', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', 'Profile updated successfully!');
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        } else {
+            showAlert('danger', data.error || 'Failed to update profile');
+        }
+    })
+    .catch(error => {
+        showAlert('danger', 'Error updating profile: ' + error.message);
+    })
+    .finally(() => {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    });
+}
+
+function followUser() {
+    showAlert('info', 'Follow functionality coming soon!');
+}
+
+function shareProfile() {
+    const url = window.location.href;
+    if (navigator.share) {
+        navigator.share({
+            title: document.querySelector('.profile-info h1').textContent + "'s Profile",
+            url: url
+        });
+    } else {
+        navigator.clipboard.writeText(url).then(() => {
+            showAlert('success', 'Profile link copied to clipboard!');
+        });
+    }
+}
+
+// Animate statistics numbers
+function animateStats() {
+    const statNumbers = document.querySelectorAll('.stat-number');
+    
+    statNumbers.forEach(stat => {
+        const target = parseInt(stat.getAttribute('data-target')) || 0;
+        const duration = 2000;
+        const increment = target / (duration / 16);
+        let current = 0;
+        
+        const updateStat = () => {
+            current += increment;
+            if (current < target) {
+                stat.textContent = Math.floor(current).toLocaleString();
+                requestAnimationFrame(updateStat);
+            } else {
+                stat.textContent = target.toLocaleString();
+            }
+        };
+        
+        updateStat();
+    });
+}
+
+// Alert helper function
+function showAlert(type, message) {
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alert.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(alert);
+    
+    setTimeout(() => {
+        if (alert.parentNode) {
+            alert.remove();
+        }
+    }, 5000);
+}
+
+// Initialize page
+document.addEventListener('DOMContentLoaded', function() {
+    // Start stat animations after a short delay
+    setTimeout(animateStats, 500);
+    
+    // Handle avatar upload
+    const avatarUpload = document.getElementById('avatarUpload');
+    if (avatarUpload) {
+        avatarUpload.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                // Validate file size (2MB max)
+                if (file.size > 2 * 1024 * 1024) {
+                    showAlert('warning', 'File size must be less than 2MB');
+                    this.value = '';
+                    return;
+                }
+                
+                // Validate file type
+                if (!file.type.match(/^image\/(jpeg|jpg|png|gif)$/)) {
+                    showAlert('warning', 'Please select a valid image file (JPG, PNG, or GIF)');
+                    this.value = '';
+                    return;
+                }
+                
+                // Show preview
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const avatar = document.getElementById('profileAvatar');
+                    if (avatar) {
+                        avatar.src = e.target.result;
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email Address</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                                    <input type="email" class="form-control" id="email" name="email" value="{{ user.email }}" required>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="bio" class="form-label">Bio</label>
+                                <textarea class="form-control" id="bio" name="bio" rows="4" placeholder="Tell us about yourself...">{{ user.bio or '' }}</textarea>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="location" class="form-label">Location</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-map-marker-alt"></i></span>
+                                        <input type="text" class="form-control" id="location" name="location" value="{{ user.location or '' }}" placeholder="City, Country">
+                                    </div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="website" class="form-label">Website</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-globe"></i></span>
+                                        <input type="url" class="form-control" id="website" name="website" value="{{ user.website or '' }}" placeholder="https://yourwebsite.com">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-2"></i>Save Changes
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" onclick="resetForm('personalInfoForm')">
+                                    <i class="fas fa-undo me-2"></i>Reset
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Security Tab -->
+                <div class="tab-pane fade" id="security">
+                    <div class="content-card">
+                        <h5 class="card-title">
+                            <i class="fas fa-shield-alt me-2"></i>Security Settings
+                        </h5>
+                        
+                        <!-- Change Password -->
+                        <div class="security-section">
+                            <h6 class="section-subtitle">Change Password</h6>
+                            <form id="passwordForm">
+                                <div class="mb-3">
+                                    <label for="current_password" class="form-label">Current Password</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                        <input type="password" class="form-control" id="current_password" name="current_password" required>
+                                        <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('current_password')">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="new_password" class="form-label">New Password</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-key"></i></span>
+                                        <input type="password" class="form-control" id="new_password" name="new_password" required>
+                                        <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('new_password')">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                    <div class="password-strength" id="passwordStrength"></div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="confirm_password" class="form-label">Confirm New Password</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fas fa-key"></i></span>
+                                        <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                                        <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('confirm_password')">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <button type="submit" class="btn btn-warning">
+                                    <i class="fas fa-shield-alt me-2"></i>Update Password
+                                </button>
+                            </form>
+                        </div>
+                        
+                        <!-- Two-Factor Authentication -->
+                        <div class="security-section">
+                            <h6 class="section-subtitle">Two-Factor Authentication</h6>
+                            <div class="security-option">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>Enable 2FA</strong>
+                                        <p class="text-muted mb-0">Add an extra layer of security to your account</p>
+                                    </div>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="enable2FA" {{ 'checked' if user.two_factor_enabled else '' }}>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Login Sessions -->
+                        <div class="security-section">
+                            <h6 class="section-subtitle">Active Sessions</h6>
+                            <div class="session-list">
+                                <div class="session-item">
+                                    <div class="session-info">
+                                        <i class="fas fa-desktop session-icon"></i>
+                                        <div>
+                                            <strong>Current Session</strong>
+                                            <p class="text-muted mb-0">Chrome on Windows • {{ request.remote_addr }}</p>
+                                        </div>
+                                    </div>
+                                    <span class="badge bg-success">Active</span>
+                                </div>
+                            </div>
+                            <button class="btn btn-outline-danger btn-sm mt-2" onclick="revokeAllSessions()">
+                                <i class="fas fa-sign-out-alt me-1"></i>Sign out all other sessions
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Preferences Tab -->
+                <div class="tab-pane fade" id="preferences">
+                    <div class="content-card">
+                        <h5 class="card-title">
+                            <i class="fas fa-cog me-2"></i>Preferences
+                        </h5>
+                        
+                        <form id="preferencesForm">
+                            <!-- Theme Settings -->
+                            <div class="preference-section">
+                                <h6 class="section-subtitle">Appearance</h6>
+                                <div class="preference-option">
+                                    <label class="form-label">Theme</label>
+                                    <select class="form-select" id="theme" name="theme">
+                                        <option value="light">Light</option>
+                                        <option value="dark">Dark</option>
+                                        <option value="auto">Auto (System)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <!-- Notification Settings -->
+                            <div class="preference-section">
+                                <h6 class="section-subtitle">Notifications</h6>
+                                <div class="preference-option">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="emailNotifications" name="email_notifications" checked>
+                                        <label class="form-check-label" for="emailNotifications">
+                                            Email notifications
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="preference-option">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="streamNotifications" name="stream_notifications" checked>
+                                        <label class="form-check-label" for="streamNotifications">
+                                            Stream notifications
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="preference-option">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="chatNotifications" name="chat_notifications">
+                                        <label class="form-check-label" for="chatNotifications">
+                                            Chat mentions
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Privacy Settings -->
+                            <div class="preference-section">
+                                <h6 class="section-subtitle">Privacy</h6>
+                                <div class="preference-option">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="profilePublic" name="profile_public" checked>
+                                        <label class="form-check-label" for="profilePublic">
+                                            Make profile public
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="preference-option">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="showActivity" name="show_activity" checked>
+                                        <label class="form-check-label" for="showActivity">
+                                            Show activity status
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-2"></i>Save Preferences
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Streaming Tab (Only for Broadcasters) -->
+                {% if user.is_broadcaster %}
+                <div class="tab-pane fade" id="streaming">
+                    <div class="content-card">
+                        <h5 class="card-title">
+                            <i class="fas fa-broadcast-tower me-2"></i>Streaming Settings
+                        </h5>
+                        
+                        <!-- Stream Key -->
+                        <div class="streaming-section">
+                            <h6 class="section-subtitle">Stream Key</h6>
+                            <div class="stream-key-container">
+                                <div class="input-group">
+                                    <input type="password" class="form-control" id="streamKey" value="{{ user.stream_key or 'sk_' + user.id|string + '_' + (user.username|lower) }}" readonly>
+                                    <button class="btn btn-outline-secondary" type="button" onclick="toggleStreamKey()">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button class="btn btn-outline-primary" type="button" onclick="copyStreamKey()">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                                <small class="text-muted">Keep your stream key private. Anyone with this key can stream to your account.</small>
+                            </div>
+                            <button class="btn btn-warning btn-sm mt-2" onclick="regenerateStreamKey()">
+                                <i class="fas fa-sync-alt me-1"></i>Regenerate Key
+                            </button>
+                        </div>
+                        
+                        <!-- RTMP Settings -->
+                        <div class="streaming-section">
+                            <h6 class="section-subtitle">RTMP Configuration</h6>
+                            <div class="rtmp-info">
+                                <div class="info-item">
+                                    <label>RTMP URL:</label>
+                                    <code>rtmp://{{ request.host }}/live</code>
+                                    <button class="btn btn-sm btn-outline-primary ms-2" onclick="copyToClipboard('rtmp://{{ request.host }}/live')">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                                <div class="info-item">
+                                    <label>Stream Key:</label>
+                                    <code id="displayStreamKey">{{ user.stream_key or 'sk_' + user.id|string + '_' + (user.username|lower) }}</code>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Stream Settings -->
+                        <div class="streaming-section">
+                            <h6 class="section-subtitle">Default Stream Settings</h6>
+                            <form id="streamSettingsForm">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="defaultTitle" class="form-label">Default Stream Title</label>
+                                        <input type="text" class="form-control" id="defaultTitle" name="default_title" value="{{ user.default_stream_title or (user.username + ' Live Stream') }}">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="defaultCategory" class="form-label">Default Category</label>
+                                        <select class="form-select" id="defaultCategory" name="default_category">
+                                            <option value="gaming">Gaming</option>
+                                            <option value="music">Music</option>
+                                            <option value="talk">Talk Shows</option>
+                                            <option value="education">Education</option>
+                                            <option value="technology">Technology</option>
+                                            <option value="other">Other</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="defaultDescription" class="form-label">Default Description</label>
+                                    <textarea class="form-control" id="defaultDescription" name="default_description" rows="3">{{ user.default_stream_description or '' }}</textarea>
+                                </div>
+                                
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-2"></i>Save Stream Settings
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Avatar Crop Modal -->
+<div class="modal fade" id="avatarModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Crop Avatar</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="avatar-crop-container">
+                    <img id="cropImage" style="max-width: 100%;">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveAvatar()">Save Avatar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+<script>
+// Profile page functionality
+
+// Avatar upload handling
+document.getElementById("avatarUpload").addEventListener("change", function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+        showAlert("danger", "File size must be less than 5MB");
+        return;
+    }
+    
+    // Create form data
+    const formData = new FormData();
+    formData.append("avatar", file);
+    
+    // Show loading state
+    const avatarOverlay = document.querySelector(".avatar-overlay i");
+    const originalIcon = avatarOverlay.className;
+    avatarOverlay.className = "fas fa-spinner fa-spin";
+    
+    // Upload avatar
+    fetch("/profile/upload-avatar", {
+        method: "POST",
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById("currentAvatar").src = data.avatar_url + "?t=" + Date.now();
+            showAlert("success", data.message);
+        } else {
+            showAlert("danger", data.error || "Failed to upload avatar");
+        }
+    })
+    .catch(error => {
+        showAlert("danger", "Error uploading avatar: " + error.message);
+    })
+    .finally(() => {
+        avatarOverlay.className = originalIcon;
+    });
+});
+
+// Avatar upload trigger
+document.querySelector(".avatar-overlay").addEventListener("click", function() {
+    document.getElementById("avatarUpload").click();
+});
+
+// Personal info form submission
+document.getElementById("personalInfoForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+    
+    const submitBtn = this.querySelector("button[type=\"submit\"]");
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = "<i class=\"fas fa-spinner fa-spin me-2\"></i>Saving...";
+    submitBtn.disabled = true;
+    
+    const formData = new FormData(this);
+    const userData = Object.fromEntries(formData.entries());
+    
+    fetch("/profile/update", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(userData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert("success", data.message);
+            // Update profile name if username changed
+            if (userData.username) {
+                document.querySelector(".profile-name").textContent = userData.username;
+            }
+        } else {
+            showAlert("danger", data.error || "Failed to update profile");
+        }
+    })
+    .catch(error => {
+        showAlert("danger", "Error updating profile: " + error.message);
+    })
+    .finally(() => {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    });
+});
+
+// Password form submission
+document.getElementById("passwordForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+    
+    const submitBtn = this.querySelector("button[type=\"submit\"]");
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = "<i class=\"fas fa-spinner fa-spin me-2\"></i>Updating...";
+    submitBtn.disabled = true;
+    
+    const formData = new FormData(this);
+    const passwordData = Object.fromEntries(formData.entries());
+    
+    fetch("/profile/change-password", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(passwordData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert("success", data.message);
+            this.reset();
+        } else {
+            showAlert("danger", data.error || "Failed to change password");
+        }
+    })
+    .catch(error => {
+        showAlert("danger", "Error changing password: " + error.message);
+    })
+    .finally(() => {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    });
+});
+
+// Preferences form submission
+document.getElementById("preferencesForm").addEventListener("submit", function(e) {
+    e.preventDefault();
+    
+    const submitBtn = this.querySelector("button[type=\"submit\"]");
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = "<i class=\"fas fa-spinner fa-spin me-2\"></i>Saving...";
+    submitBtn.disabled = true;
+    
+    const formData = new FormData(this);
+    const preferences = {};
+    
+    // Convert form data to preferences object
+    for (let [key, value] of formData.entries()) {
+        if (this.elements[key].type === "checkbox") {
+            preferences[key] = this.elements[key].checked;
+        } else {
+            preferences[key] = value;
+        }
+    }
+    
+    fetch("/profile/preferences", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(preferences)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert("success", data.message);
+            // Apply theme change immediately if changed
+            if (preferences.theme && preferences.theme !== "auto") {
+                document.documentElement.setAttribute("data-bs-theme", preferences.theme);
+            }
+        } else {
+            showAlert("danger", data.error || "Failed to save preferences");
+        }
+    })
+    .catch(error => {
+        showAlert("danger", "Error saving preferences: " + error.message);
+    })
+    .finally(() => {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    });
+});
+
+// Password strength checker
+document.getElementById("new_password").addEventListener("input", function() {
+    const password = this.value;
+    const strengthDiv = document.getElementById("passwordStrength");
+    
+    if (!password) {
+        strengthDiv.innerHTML = "";
+        return;
+    }
+    
+    let strength = 0;
+    let feedback = [];
+    
+    if (password.length >= 8) strength++;
+    else feedback.push("At least 8 characters");
+    
+    if (/[a-z]/.test(password)) strength++;
+    else feedback.push("Lowercase letter");
+    
+    if (/[A-Z]/.test(password)) strength++;
+    else feedback.push("Uppercase letter");
+    
+    if (/[0-9]/.test(password)) strength++;
+    else feedback.push("Number");
+    
+    if (/[^A-Za-z0-9]/.test(password)) strength++;
+    else feedback.push("Special character");
+    
+    const levels = ["Very Weak", "Weak", "Fair", "Good", "Strong"];
+    const colors = ["password-weak", "password-weak", "password-fair", "password-good", "password-strong"];
+    
+    strengthDiv.className = `password-strength ${colors[strength]}`;
+    strengthDiv.innerHTML = `Strength: ${levels[strength]}${feedback.length ? " (Missing: " + feedback.join(", ") + ")" : ""}`;
+});
+
+// Password visibility toggle
+function togglePassword(fieldId) {
+    const field = document.getElementById(fieldId);
+    const btn = field.nextElementSibling.querySelector("i");
+    
+    if (field.type === "password") {
+        field.type = "text";
+        btn.className = "fas fa-eye-slash";
+    } else {
+        field.type = "password";
+        btn.className = "fas fa-eye";
+    }
+}
+
+// Stream key functionality
+function toggleStreamKey() {
+    const field = document.getElementById("streamKey");
+    const btn = field.nextElementSibling.querySelector("i");
+    
+    if (field.type === "password") {
+        field.type = "text";
+        btn.className = "fas fa-eye-slash";
+    } else {
+        field.type = "password";
+        btn.className = "fas fa-eye";
+    }
+}
+
+function copyStreamKey() {
+    const field = document.getElementById("streamKey");
+    field.select();
+    document.execCommand("copy");
+    showAlert("success", "Stream key copied to clipboard");
+}
+
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        showAlert("success", "Copied to clipboard");
+    });
+}
+
+function regenerateStreamKey() {
+    if (confirm("Are you sure? This will invalidate your current stream key and disconnect any active streams.")) {
+        fetch("/profile/regenerate-stream-key", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById("streamKey").value = data.stream_key;
+                document.getElementById("displayStreamKey").textContent = data.stream_key;
+                showAlert("success", data.message);
+            } else {
+                showAlert("danger", data.error || "Failed to regenerate stream key");
+            }
+        })
+        .catch(error => {
+            showAlert("danger", "Error regenerating stream key: " + error.message);
+        });
+    }
+}
+
+// Utility functions
+function resetForm(formId) {
+    document.getElementById(formId).reset();
+}
+
+function downloadUserData() {
+    showAlert("info", "Preparing your data download...");
+    // In a real app, this would generate and download user data
+}
+
+function revokeAllSessions() {
+    if (confirm("This will sign you out of all other devices. Continue?")) {
+        showAlert("info", "All other sessions have been revoked");
+    }
+}
+
+// Alert helper function
+function showAlert(type, message) {
+    const alertContainer = document.querySelector(".container");
+    const alert = document.createElement("div");
+    alert.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alert.style.cssText = "top: 20px; right: 20px; z-index: 9999; min-width: 300px;";
+    alert.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(alert);
+    
+    setTimeout(() => {
+        if (alert.parentNode) {
+            alert.remove();
+        }
+    }, 5000);
+}
+</script>
+

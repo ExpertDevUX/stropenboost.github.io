@@ -1,0 +1,369 @@
+{% extends "base.html" %}
+
+{% block title %}Contact Us - StrophenBoost{% endblock %}
+
+{% block content %}
+<!-- Hero Section with Gradient Background -->
+<div class="contact-hero">
+    <div class="container py-5">
+        <div class="row justify-content-center text-center">
+            <div class="col-lg-8">
+                <div class="hero-content">
+                    <div class="hero-icon mb-4">
+                        <i class="fas fa-comments fa-4x"></i>
+                    </div>
+                    <h1 class="display-3 fw-bold mb-4 hero-title">Let's Connect</h1>
+                    <p class="lead mb-4 hero-subtitle">Ready to transform your streaming experience? Our team is here to help you succeed with StrophenBoost.</p>
+                    <div class="hero-stats">
+                        <div class="row text-center">
+                            <div class="col-md-4">
+                                <div class="stat-item">
+                                    <i class="fas fa-clock fa-2x mb-2"></i>
+                                    <h4>24/7</h4>
+                                    <p>Support Available</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="stat-item">
+                                    <i class="fas fa-reply fa-2x mb-2"></i>
+                                    <h4>&lt; 1 Hour</h4>
+                                    <p>Average Response</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="stat-item">
+                                    <i class="fas fa-smile fa-2x mb-2"></i>
+                                    <h4>99%</h4>
+                                    <p>Satisfaction Rate</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            
+            <!-- Contact Methods with Beautiful Cards -->
+            <div class="row mb-5">
+                <div class="col-md-4 mb-4">
+                    <div class="contact-card">
+                        <div class="card-icon">
+                            <i class="fas fa-headset"></i>
+                        </div>
+                        <div class="card-content">
+                            <h5 class="card-title">Technical Support</h5>
+                            <p class="card-description">Get expert help with streaming setup, troubleshooting, and platform optimization.</p>
+                            <div class="card-features">
+                                <span class="feature-badge">24/7 Available</span>
+                                <span class="feature-badge">Expert Team</span>
+                            </div>
+                            <a href="mailto:support@strophenboost.com" class="contact-btn">
+                                <i class="fas fa-envelope me-2"></i>Get Support
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4 mb-4">
+                    <div class="contact-card">
+                        <div class="card-icon business">
+                            <i class="fas fa-handshake"></i>
+                        </div>
+                        <div class="card-content">
+                            <h5 class="card-title">Business Partnerships</h5>
+                            <p class="card-description">Explore enterprise solutions, integration opportunities, and strategic collaborations.</p>
+                            <div class="card-features">
+                                <span class="feature-badge">Enterprise Ready</span>
+                                <span class="feature-badge">Custom Solutions</span>
+                            </div>
+                            <a href="mailto:business@strophenboost.com" class="contact-btn">
+                                <i class="fas fa-rocket me-2"></i>Partner With Us
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4 mb-4">
+                    <div class="contact-card">
+                        <div class="card-icon feedback">
+                            <i class="fas fa-lightbulb"></i>
+                        </div>
+                        <div class="card-content">
+                            <h5 class="card-title">Product Feedback</h5>
+                            <p class="card-description">Share your ideas, report bugs, and help us build the future of streaming.</p>
+                            <div class="card-features">
+                                <span class="feature-badge">Feature Requests</span>
+                                <span class="feature-badge">Bug Reports</span>
+                            </div>
+                            <a href="mailto:feedback@strophenboost.com" class="contact-btn">
+                                <i class="fas fa-paper-plane me-2"></i>Share Ideas
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Enhanced Contact Form -->
+            <div class="contact-form-section">
+                <div class="row">
+                    <div class="col-lg-8">
+                        <div class="contact-form-card">
+                            <div class="form-header">
+                                <h3 class="form-title">
+                                    <i class="fas fa-paper-plane me-3"></i>Send us a Message
+                                </h3>
+                                <p class="form-subtitle">Fill out the form below and we'll get back to you within 24 hours.</p>
+                            </div>
+                            
+                            <form id="contactForm" class="contact-form">
+                                <div class="row">
+                                    <div class="col-md-6 mb-4">
+                                        <div class="form-group">
+                                            <label for="name" class="form-label">Full Name *</label>
+                                            <div class="input-wrapper">
+                                                <i class="fas fa-user input-icon"></i>
+                                                <input type="text" class="form-control" id="name" name="name" placeholder="Enter your full name" required>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-4">
+                                        <div class="form-group">
+                                            <label for="email" class="form-label">Email Address *</label>
+                                            <div class="input-wrapper">
+                                                <i class="fas fa-envelope input-icon"></i>
+                                                <input type="email" class="form-control" id="email" name="email" placeholder="your@email.com" required>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 mb-4">
+                                        <div class="form-group">
+                                            <label for="company" class="form-label">Company (Optional)</label>
+                                            <div class="input-wrapper">
+                                                <i class="fas fa-building input-icon"></i>
+                                                <input type="text" class="form-control" id="company" name="company" placeholder="Your company name">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 mb-4">
+                                        <div class="form-group">
+                                            <label for="subject" class="form-label">Subject *</label>
+                                            <div class="input-wrapper">
+                                                <i class="fas fa-tag input-icon"></i>
+                                                <select class="form-select" id="subject" name="subject" required>
+                                                    <option value="">Choose a topic...</option>
+                                                    <option value="technical-support">🛠️ Technical Support</option>
+                                                    <option value="billing">💳 Billing & Account</option>
+                                                    <option value="feature-request">💡 Feature Request</option>
+                                                    <option value="bug-report">🐛 Bug Report</option>
+                                                    <option value="partnership">🤝 Partnership</option>
+                                                    <option value="media">📺 Media Inquiry</option>
+                                                    <option value="other">📋 Other</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-4">
+                                    <div class="form-group">
+                                        <label for="message" class="form-label">Message *</label>
+                                        <div class="input-wrapper">
+                                            <i class="fas fa-comment input-icon"></i>
+                                            <textarea class="form-control" id="message" name="message" rows="6" placeholder="Tell us more about your inquiry..." required></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-4">
+                                    <div class="col-md-6">
+                                        <div class="form-check custom-checkbox">
+                                            <input type="checkbox" class="form-check-input" id="newsletter" name="newsletter">
+                                            <label class="form-check-label" for="newsletter">
+                                                <i class="fas fa-envelope-open me-2"></i>Subscribe to newsletter
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-check custom-checkbox">
+                                            <input type="checkbox" class="form-check-input" id="updates" name="updates">
+                                            <label class="form-check-label" for="updates">
+                                                <i class="fas fa-bell me-2"></i>Product updates
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-actions">
+                                    <button type="submit" class="btn-submit">
+                                        <span class="btn-text">
+                                            <i class="fas fa-paper-plane me-2"></i>Send Message
+                                        </span>
+                                        <span class="btn-loading" style="display: none;">
+                                            <i class="fas fa-spinner fa-spin me-2"></i>Sending...
+                                        </span>
+                                    </button>
+                                    <p class="form-note">We typically respond within 1-2 hours during business hours.</p>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-4">
+                        <div class="contact-info-card">
+                            <h4 class="info-title">
+                                <i class="fas fa-map-marker-alt me-2"></i>Our Office
+                            </h4>
+                            <div class="office-info">
+                                <p><strong>StrophenBoost HQ</strong></p>
+                                <p>123 Innovation Drive<br>Tech Valley, CA 94000<br>United States</p>
+                                <div class="office-hours">
+                                    <h6><i class="fas fa-clock me-2"></i>Business Hours</h6>
+                                    <p>Monday - Friday: 9:00 AM - 6:00 PM PST<br>
+                                    Saturday: 10:00 AM - 2:00 PM PST<br>
+                                    Sunday: Closed</p>
+                                </div>
+                            </div>
+                            
+                            <div class="contact-methods">
+                                <h6><i class="fas fa-phone me-2"></i>Direct Contact</h6>
+                                <div class="contact-item">
+                                    <i class="fas fa-phone-alt"></i>
+                                    <span>+1 (555) 123-STREAM</span>
+                                </div>
+                                <div class="contact-item">
+                                    <i class="fas fa-envelope"></i>
+                                    <span>hello@strophenboost.com</span>
+                                </div>
+                                <div class="contact-item">
+                                    <i class="fab fa-discord"></i>
+                                    <span>Join our Discord</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- FAQ Section -->
+            <div class="faq-section mt-5">
+                <div class="text-center mb-5">
+                    <h3 class="section-title">
+                        <i class="fas fa-question-circle me-3"></i>Frequently Asked Questions
+                    </h3>
+                    <p class="section-subtitle">Quick answers to common questions</p>
+                </div>
+                
+                <div class="row">
+                    <div class="col-lg-8 mx-auto">
+                        <div class="accordion" id="faqAccordion">
+                            <div class="accordion-item faq-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                                        <i class="fas fa-stream me-2"></i>How do I start streaming on StrophenBoost?
+                                    </button>
+                                </h2>
+                                <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
+                                    <div class="accordion-body">
+                                        Simply create an account, set up your stream settings, and use your RTMP URL with broadcasting software like OBS. Our documentation provides step-by-step guidance.
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="accordion-item faq-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                                        <i class="fas fa-dollar-sign me-2"></i>What are your pricing plans?
+                                    </button>
+                                </h2>
+                                <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                    <div class="accordion-body">
+                                        We offer flexible pricing starting with a free tier for basic streaming, with premium plans for advanced features, higher quality, and custom branding.
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="accordion-item faq-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+                                        <i class="fas fa-code me-2"></i>Can I embed streams on my website?
+                                    </button>
+                                </h2>
+                                <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                    <div class="accordion-body">
+                                        Yes! Our platform provides embeddable players that work seamlessly on any website. You get iframe codes and JavaScript widgets for easy integration.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Social Follow Section -->
+            <div class="social-follow-section mt-5">
+                <div class="text-center">
+                    <h4 class="social-title">
+                        <i class="fas fa-heart me-2"></i>Stay Connected
+                    </h4>
+                    <p class="social-subtitle">Follow us for updates, tips, and community highlights</p>
+                    <div class="social-icons-large">
+                        <a href="#" class="social-icon-large twitter" title="Follow us on Twitter">
+                            <i class="fab fa-twitter"></i>
+                        </a>
+                        <a href="#" class="social-icon-large youtube" title="Subscribe to our YouTube">
+                            <i class="fab fa-youtube"></i>
+                        </a>
+                        <a href="#" class="social-icon-large discord" title="Join our Discord">
+                            <i class="fab fa-discord"></i>
+                        </a>
+                        <a href="https://github.com/ExpertDevUX" class="social-icon-large github" target="_blank" title="Expert Dev UX on GitHub">
+                            <i class="fab fa-github"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('contactForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    // Show success message
+    const form = this;
+    const formData = new FormData(form);
+    
+    // Simulate form submission
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Sending...';
+    submitBtn.disabled = true;
+    
+    setTimeout(() => {
+        // Show success message
+        const alert = document.createElement('div');
+        alert.className = 'alert alert-success';
+        alert.innerHTML = '<i class="fas fa-check-circle me-2"></i>Thank you! Your message has been sent successfully. We\'ll get back to you soon.';
+        
+        form.parentNode.insertBefore(alert, form);
+        form.reset();
+        
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+        
+        // Remove alert after 5 seconds
+        setTimeout(() => alert.remove(), 5000);
+    }, 1500);
+});
+</script>
+{% endblock %}

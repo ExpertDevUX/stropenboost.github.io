@@ -1,0 +1,361 @@
+{% extends "base.html" %}
+
+{% block title %}User Management - StrophenBoost{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="mb-0">
+                    <i class="fas fa-users me-3"></i>User Management
+                </h1>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUserModal">
+                    <i class="fas fa-plus me-1"></i>Add New User
+                </button>
+            </div>
+            
+            <!-- User Statistics Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3 mb-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <i class="fas fa-users fa-2x text-primary mb-2"></i>
+                            <h4 class="mb-1">{{ total_users or 1 }}</h4>
+                            <small class="text-muted">Total Users</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <i class="fas fa-broadcast-tower fa-2x text-success mb-2"></i>
+                            <h4 class="mb-1">{{ active_broadcasters or 0 }}</h4>
+                            <small class="text-muted">Active Broadcasters</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <i class="fas fa-eye fa-2x text-info mb-2"></i>
+                            <h4 class="mb-1">{{ active_viewers or 0 }}</h4>
+                            <small class="text-muted">Active Viewers</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <i class="fas fa-user-plus fa-2x text-warning mb-2"></i>
+                            <h4 class="mb-1">{{ new_users_today or 0 }}</h4>
+                            <small class="text-muted">New Today</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- User Management Table -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <h5 class="mb-0">All Users</h5>
+                        </div>
+                        <div class="col-auto">
+                            <div class="input-group">
+                                <input type="text" class="form-control" placeholder="Search users..." id="userSearch">
+                                <button class="btn btn-outline-secondary" type="button">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th>Streams</th>
+                                    <th>Joined</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in users %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-circle me-3">
+                                                {{ user.username[0].upper() }}
+                                            </div>
+                                            <div>
+                                                <strong>{{ user.username }}</strong>
+                                                <br><small class="text-muted">{{ user.email }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ 'primary' if user.is_broadcaster else 'secondary' }}">
+                                            {{ 'Broadcaster' if user.is_broadcaster else 'Viewer' }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-success">Active</span>
+                                    </td>
+                                    <td>{{ user.streams|length if user.streams else 0 }}</td>
+                                    <td>{{ user.created_at.strftime('%b %d, %Y') if user.created_at else 'N/A' }}</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <button class="btn btn-outline-primary" title="View Profile" onclick="viewUser({{ user.id }})">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="btn btn-outline-warning" title="Edit User" onclick="editUser({{ user.id }})">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="btn btn-outline-danger" title="Suspend User" onclick="suspendUser({{ user.id }})">
+                                                <i class="fas fa-ban"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-4">
+                                        <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                                        <p class="text-muted mb-0">No users found</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add User Modal -->
+<div class="modal fade" id="addUserModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add New User</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addUserForm">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Username</label>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="is_broadcaster" name="is_broadcaster">
+                            <label class="form-check-label" for="is_broadcaster">
+                                Grant broadcaster privileges
+                            </label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" form="addUserForm" class="btn btn-primary">Add User</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Add user functionality
+document.getElementById('addUserForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Creating...';
+    submitBtn.disabled = true;
+    
+    const formData = new FormData(this);
+    const userData = {
+        username: formData.get('username'),
+        email: formData.get('email'),
+        password: formData.get('password'),
+        is_broadcaster: formData.get('is_broadcaster') === 'on'
+    };
+    
+    fetch('/user-management/add', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', data.message);
+            this.reset();
+            document.getElementById('addUserModal').querySelector('.btn-close').click();
+            // Refresh page to show new user
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showAlert('danger', data.error || 'Failed to create user');
+        }
+    })
+    .catch(error => {
+        showAlert('danger', 'Error creating user: ' + error.message);
+    })
+    .finally(() => {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    });
+});
+
+// User action handlers
+function viewUser(userId) {
+    fetch(`/user-management/view/${userId}`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const user = data.user;
+            const modalContent = `
+                <div class="modal fade" id="viewUserModal" tabindex="-1">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">User Profile: ${user.username}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <p><strong>Username:</strong> ${user.username}</p>
+                                        <p><strong>Email:</strong> ${user.email}</p>
+                                        <p><strong>Role:</strong> ${user.is_broadcaster ? 'Broadcaster' : 'Viewer'}</p>
+                                        <p><strong>Joined:</strong> ${user.created_at}</p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <p><strong>Total Streams:</strong> ${user.stream_count}</p>
+                                        <div class="streams-list">
+                                            <h6>Recent Streams:</h6>
+                                            ${user.streams.map(stream => `
+                                                <div class="stream-item">
+                                                    <span class="badge bg-${stream.is_live ? 'success' : 'secondary'}">${stream.is_live ? 'Live' : 'Offline'}</span>
+                                                    ${stream.title}
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Remove existing modal if any
+            const existingModal = document.getElementById('viewUserModal');
+            if (existingModal) existingModal.remove();
+            
+            // Add new modal
+            document.body.insertAdjacentHTML('beforeend', modalContent);
+            new bootstrap.Modal(document.getElementById('viewUserModal')).show();
+        } else {
+            showAlert('danger', 'Failed to load user details');
+        }
+    })
+    .catch(error => {
+        showAlert('danger', 'Error loading user: ' + error.message);
+    });
+}
+
+function editUser(userId) {
+    // Implementation for edit user modal
+    showAlert('info', 'Edit user functionality - coming soon');
+}
+
+function suspendUser(userId) {
+    if (confirm('Are you sure you want to suspend this user?')) {
+        fetch(`/user-management/suspend/${userId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('success', data.message);
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showAlert('danger', data.error || 'Failed to suspend user');
+            }
+        })
+        .catch(error => {
+            showAlert('danger', 'Error suspending user: ' + error.message);
+        });
+    }
+}
+
+// Search functionality
+document.getElementById('userSearch').addEventListener('input', function(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    const rows = document.querySelectorAll('tbody tr');
+    
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(searchTerm) ? '' : 'none';
+    });
+});
+
+// Alert helper function
+function showAlert(type, message) {
+    const alertContainer = document.querySelector('.container');
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type} alert-dismissible fade show`;
+    alert.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    alertContainer.insertBefore(alert, alertContainer.firstChild);
+    
+    setTimeout(() => {
+        if (alert.parentNode) {
+            alert.remove();
+        }
+    }, 5000);
+}
+</script>
+
+<style>
+.avatar-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+</style>
+{% endblock %}

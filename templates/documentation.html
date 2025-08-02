@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}Documentation - StrophenBoost{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-lg-3">
+            <div class="card sticky-top" style="top: 100px;">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-book me-2"></i>Documentation</h6>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a href="#getting-started" class="list-group-item list-group-item-action">Getting Started</a>
+                    <a href="#streaming-setup" class="list-group-item list-group-item-action">Streaming Setup</a>
+                    <a href="#embed-integration" class="list-group-item list-group-item-action">Embed Integration</a>
+                    <a href="#api-reference" class="list-group-item list-group-item-action">API Reference</a>
+                    <a href="#troubleshooting" class="list-group-item list-group-item-action">Troubleshooting</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-9">
+            <h1 class="mb-4">StrophenBoost Documentation</h1>
+            
+            <section id="getting-started" class="mb-5">
+                <div class="card">
+                    <div class="card-body">
+                        <h2 class="card-title">Getting Started</h2>
+                        <p>Welcome to StrophenBoost! Follow these steps to start streaming:</p>
+                        <ol>
+                            <li><strong>Create an Account:</strong> Register as a broadcaster to access streaming features</li>
+                            <li><strong>Create a Stream:</strong> Set up your stream with title and description</li>
+                            <li><strong>Configure OBS:</strong> Use your RTMP URL and stream key in broadcasting software</li>
+                            <li><strong>Go Live:</strong> Start streaming and share your stream with viewers</li>
+                        </ol>
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Pro Tip:</strong> Test your stream setup with a private stream before going live publicly.
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="streaming-setup" class="mb-5">
+                <div class="card">
+                    <div class="card-body">
+                        <h2 class="card-title">Streaming Setup</h2>
+                        <h4>OBS Studio Configuration</h4>
+                        <p>Configure OBS Studio with these settings:</p>
+                        <ul>
+                            <li><strong>Server:</strong> rtmp://your-domain.com:1935/live</li>
+                            <li><strong>Stream Key:</strong> Your unique stream key from the dashboard</li>
+                            <li><strong>Recommended Settings:</strong> 720p @ 30fps, 2500 kbps bitrate</li>
+                        </ul>
+                        
+                        <h4>Supported Formats</h4>
+                        <ul>
+                            <li>Output: HLS (.m3u8) and DASH (.mpd)</li>
+                            <li>Video Codecs: H.264, H.265</li>
+                            <li>Audio Codecs: AAC, MP3</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="embed-integration" class="mb-5">
+                <div class="card">
+                    <div class="card-body">
+                        <h2 class="card-title">Embed Integration</h2>
+                        <p>Embed your streams on any website using these options:</p>
+                        
+                        <h4>Iframe Embed</h4>
+                        <pre class="bg-light p-3 rounded"><code>&lt;iframe src="https://your-domain.com/embed/STREAM_ID" 
+    width="800" height="450" frameborder="0" allowfullscreen&gt;
+&lt;/iframe&gt;</code></pre>
+                        
+                        <h4>JavaScript Embed</h4>
+                        <pre class="bg-light p-3 rounded"><code>&lt;div id="strophenboost-player"&gt;&lt;/div&gt;
+&lt;script src="https://your-domain.com/embed.js"&gt;&lt;/script&gt;</code></pre>
+                        
+                        <h4>Responsive Embed</h4>
+                        <p>Use responsive containers for mobile-friendly embeds.</p>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="api-reference" class="mb-5">
+                <div class="card">
+                    <div class="card-body">
+                        <h2 class="card-title">API Reference</h2>
+                        <p>StrophenBoost provides REST API endpoints for stream management:</p>
+                        
+                        <h4>Stream Operations</h4>
+                        <ul>
+                            <li><code>POST /create_stream</code> - Create new stream</li>
+                            <li><code>POST /start_stream/&lt;id&gt;</code> - Start streaming</li>
+                            <li><code>POST /stop_stream/&lt;id&gt;</code> - Stop streaming</li>
+                            <li><code>GET /stream_analytics/&lt;id&gt;</code> - Get analytics</li>
+                            <li><code>GET /embed_code/&lt;id&gt;</code> - Get embed codes</li>
+                        </ul>
+                        
+                        <h4>Authentication</h4>
+                        <p>All API requests require valid session authentication.</p>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="troubleshooting" class="mb-5">
+                <div class="card">
+                    <div class="card-body">
+                        <h2 class="card-title">Troubleshooting</h2>
+                        
+                        <h4>Common Issues</h4>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5>Stream Won't Start</h5>
+                                <ul class="small">
+                                    <li>Check RTMP URL and stream key</li>
+                                    <li>Verify OBS connection settings</li>
+                                    <li>Check firewall and network settings</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h5>Poor Stream Quality</h5>
+                                <ul class="small">
+                                    <li>Reduce bitrate in OBS</li>
+                                    <li>Check internet connection speed</li>
+                                    <li>Lower resolution or framerate</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>Need Help?</strong> Contact our support team for assistance with technical issues.
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}Embed Settings - StrophenBoost{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="fas fa-code me-2"></i>Embed Settings
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form id="embedSettingsForm">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="embedWidth" class="form-label">Width (px)</label>
+                                    <input type="number" class="form-control" id="embedWidth" name="width" value="800" min="300" max="1920">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="embedHeight" class="form-label">Height (px)</label>
+                                    <input type="number" class="form-control" id="embedHeight" name="height" value="450" min="200" max="1080">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" class="form-check-input" id="autoplay" name="autoplay">
+                                    <label class="form-check-label" for="autoplay">
+                                        Enable Autoplay
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" class="form-check-input" id="showChat" name="show_chat" checked>
+                                    <label class="form-check-label" for="showChat">
+                                        Show Chat
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" class="form-check-input" id="showControls" name="show_controls" checked>
+                                    <label class="form-check-label" for="showControls">
+                                        Show Controls
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="theme" class="form-label">Theme</label>
+                                    <select class="form-select" id="theme" name="theme">
+                                        <option value="dark">Dark</option>
+                                        <option value="light">Light</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>Update Settings
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Preview -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-eye me-2"></i>Preview
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="embedPreview" class="border p-3 bg-light">
+                        <!-- Embed preview will be loaded here -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Generated Code -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-code me-2"></i>Generated Embed Code
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Standard Iframe</label>
+                        <textarea class="form-control" id="iframeCode" rows="4" readonly></textarea>
+                        <button class="btn btn-sm btn-outline-secondary mt-2" onclick="copyToClipboard('iframeCode')">
+                            <i class="fas fa-copy me-1"></i>Copy
+                        </button>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Responsive Iframe</label>
+                        <textarea class="form-control" id="responsiveCode" rows="6" readonly></textarea>
+                        <button class="btn btn-sm btn-outline-secondary mt-2" onclick="copyToClipboard('responsiveCode')">
+                            <i class="fas fa-copy me-1"></i>Copy
+                        </button>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">JavaScript Embed</label>
+                        <textarea class="form-control" id="jsCode" rows="8" readonly></textarea>
+                        <button class="btn btn-sm btn-outline-secondary mt-2" onclick="copyToClipboard('jsCode')">
+                            <i class="fas fa-copy me-1"></i>Copy
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/embed.js') }}"></script>
+{% endblock %}

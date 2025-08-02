@@ -1,0 +1,1011 @@
+{% extends "base.html" %}
+
+{% block title %}Chat Management - StrophenBoost{% endblock %}
+
+{% block extra_head %}
+<style>
+.chat-management-card {
+    transition: all 0.3s ease;
+    border: none;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.chat-management-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.chat-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: 10px 10px 0 0;
+}
+
+.chat-message {
+    border-left: 4px solid #667eea;
+    background: #f8f9ff;
+    padding: 1rem;
+    margin-bottom: 0.5rem;
+    border-radius: 0 8px 8px 0;
+    transition: all 0.3s ease;
+}
+
+.chat-message:hover {
+    background: #f0f4ff;
+    transform: translateX(5px);
+}
+
+.chat-message.bot-message {
+    border-left-color: #28a745;
+    background: #f8fff8;
+}
+
+.chat-message.bot-message:hover {
+    background: #f0fff0;
+}
+
+.chat-message.deleted-message {
+    border-left-color: #dc3545;
+    background: #fff8f8;
+    opacity: 0.7;
+}
+
+.online-user {
+    background: #e8f5e8;
+    border: 1px solid #d4edda;
+    border-radius: 20px;
+    padding: 0.5rem 1rem;
+    margin: 0.25rem;
+    display: inline-block;
+    transition: all 0.3s ease;
+}
+
+.online-user:hover {
+    background: #d1ecf1;
+    transform: scale(1.05);
+}
+
+.chat-stats-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 15px;
+    padding: 2rem;
+}
+
+.stat-item {
+    text-align: center;
+    padding: 1rem;
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: bold;
+    display: block;
+}
+
+.message-actions {
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.chat-message:hover .message-actions {
+    opacity: 1;
+}
+
+.filter-tabs .nav-link {
+    border-radius: 25px;
+    margin: 0.25rem;
+    transition: all 0.3s ease;
+}
+
+.filter-tabs .nav-link.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    color: white;
+}
+
+.ai-bot-settings {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    border-radius: 15px;
+    padding: 2rem;
+}
+
+[data-bs-theme="dark"] .chat-message {
+    background: rgba(255, 255, 255, 0.05);
+    border-left-color: #667eea;
+}
+
+[data-bs-theme="dark"] .chat-message:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+[data-bs-theme="dark"] .online-user {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card chat-management-card">
+                <div class="chat-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2 class="mb-1">
+                                <i class="fas fa-comments me-3"></i>Chat Management
+                            </h2>
+                            <p class="mb-0 opacity-75">Monitor live chat, manage users, and configure AI bot</p>
+                        </div>
+                        <div class="text-end">
+                            <div class="btn-group">
+                                <button class="btn btn-light" onclick="refreshChatData()">
+                                    <i class="fas fa-sync-alt me-2"></i>Refresh
+                                </button>
+                                <button class="btn btn-outline-light" onclick="exportChatHistory()">
+                                    <i class="fas fa-download me-2"></i>Export
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body p-0">
+                    <!-- Navigation Tabs -->
+                    <div class="px-4 pt-4">
+                        <ul class="nav nav-pills mb-4 filter-tabs" id="chatTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="live-chat-tab" data-bs-toggle="pill" data-bs-target="#live-chat" type="button" role="tab">
+                                    <i class="fas fa-broadcast-tower me-2"></i>Live Chat
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="chat-history-tab" data-bs-toggle="pill" data-bs-target="#chat-history" type="button" role="tab">
+                                    <i class="fas fa-history me-2"></i>Chat History
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="online-users-tab" data-bs-toggle="pill" data-bs-target="#online-users" type="button" role="tab">
+                                    <i class="fas fa-users me-2"></i>Online Users
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="ai-bot-tab" data-bs-toggle="pill" data-bs-target="#ai-bot" type="button" role="tab">
+                                    <i class="fas fa-robot me-2"></i>AI Bot
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="settings-tab" data-bs-toggle="pill" data-bs-target="#settings" type="button" role="tab">
+                                    <i class="fas fa-cogs me-2"></i>Settings
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Tab Content -->
+                    <div class="tab-content px-4 pb-4" id="chatTabContent">
+                        <!-- Live Chat Tab -->
+                        <div class="tab-pane fade show active" id="live-chat" role="tabpanel">
+                            <div class="row">
+                                <div class="col-lg-8">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <h5 class="mb-0">
+                                                    <i class="fas fa-comments me-2"></i>Live Messages
+                                                </h5>
+                                                <div>
+                                                    <select class="form-select form-select-sm" id="streamSelect" onchange="switchStream()">
+                                                        <option value="">All Streams</option>
+                                                        {% for stream in live_streams %}
+                                                        <option value="{{ stream.id }}">{{ stream.title }}</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="card-body" style="height: 500px; overflow-y: auto;" id="liveChatContainer">
+                                            <div id="liveMessages">
+                                                <!-- Live messages will be populated here -->
+                                            </div>
+                                        </div>
+                                        <div class="card-footer">
+                                            <div class="input-group">
+                                                <input type="text" class="form-control" id="adminMessageInput" placeholder="Send message as admin..." maxlength="500">
+                                                <button class="btn btn-primary" onclick="sendAdminMessage()">
+                                                    <i class="fas fa-paper-plane"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-lg-4">
+                                    <div class="chat-stats-card mb-4">
+                                        <h5 class="mb-3">
+                                            <i class="fas fa-chart-line me-2"></i>Real-time Stats
+                                        </h5>
+                                        <div class="row text-center">
+                                            <div class="col-6 stat-item">
+                                                <span class="stat-number" id="totalMessages">0</span>
+                                                <small>Total Messages</small>
+                                            </div>
+                                            <div class="col-6 stat-item">
+                                                <span class="stat-number" id="activeUsers">0</span>
+                                                <small>Active Users</small>
+                                            </div>
+                                            <div class="col-6 stat-item">
+                                                <span class="stat-number" id="messagesPerMinute">0</span>
+                                                <small>Msg/Min</small>
+                                            </div>
+                                            <div class="col-6 stat-item">
+                                                <span class="stat-number" id="moderatedMessages">0</span>
+                                                <small>Moderated</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h6 class="mb-0">Quick Actions</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="d-grid gap-2">
+                                                <button class="btn btn-warning" onclick="enableSlowMode()">
+                                                    <i class="fas fa-turtle me-2"></i>Enable Slow Mode
+                                                </button>
+                                                <button class="btn btn-danger" onclick="clearChat()">
+                                                    <i class="fas fa-trash me-2"></i>Clear Chat
+                                                </button>
+                                                <button class="btn btn-info" onclick="toggleAIBot()">
+                                                    <i class="fas fa-robot me-2"></i>Toggle AI Bot
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Chat History Tab -->
+                        <div class="tab-pane fade" id="chat-history" role="tabpanel">
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <h5 class="mb-0">
+                                                    <i class="fas fa-history me-2"></i>Chat History
+                                                </h5>
+                                                <div class="d-flex gap-2">
+                                                    <input type="date" class="form-control form-control-sm" id="historyDate" onchange="filterChatHistory()">
+                                                    <input type="text" class="form-control form-control-sm" id="historySearch" placeholder="Search messages..." onkeyup="searchChatHistory()">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="card-body">
+                                            <div id="chatHistoryContainer" style="max-height: 600px; overflow-y: auto;">
+                                                {% for message in chat_history %}
+                                                <div class="chat-message {{ 'bot-message' if message.username == 'StrophenBot' else '' }} {{ 'deleted-message' if message.is_deleted else '' }}" data-message-id="{{ message.id }}">
+                                                    <div class="d-flex justify-content-between align-items-start">
+                                                        <div class="flex-grow-1">
+                                                            <div class="d-flex align-items-center mb-1">
+                                                                <strong class="me-2">
+                                                                    {% if message.username == 'StrophenBot' %}
+                                                                        <i class="fas fa-robot me-1 text-success"></i>
+                                                                    {% endif %}
+                                                                    {{ message.username }}
+                                                                </strong>
+                                                                <small class="text-muted">{{ message.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</small>
+                                                            </div>
+                                                            <div class="message-content">
+                                                                {% if message.is_deleted %}
+                                                                    <em class="text-muted">[Message deleted]</em>
+                                                                {% else %}
+                                                                    {{ message.message }}
+                                                                {% endif %}
+                                                            </div>
+                                                        </div>
+                                                        <div class="message-actions">
+                                                            {% if not message.is_deleted %}
+                                                            <button class="btn btn-sm btn-outline-danger" onclick="deleteMessage({{ message.id }})">
+                                                                <i class="fas fa-trash"></i>
+                                                            </button>
+                                                            {% endif %}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Online Users Tab -->
+                        <div class="tab-pane fade" id="online-users" role="tabpanel">
+                            <div class="row">
+                                <div class="col-lg-8">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h5 class="mb-0">
+                                                <i class="fas fa-users me-2"></i>Currently Online
+                                            </h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <div id="onlineUsersContainer">
+                                                <!-- Online users will be populated here -->
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-lg-4">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h6 class="mb-0">User Management</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="mb-3">
+                                                <input type="text" class="form-control" id="userSearchInput" placeholder="Search users..." onkeyup="searchUsers()">
+                                            </div>
+                                            <div class="d-grid gap-2">
+                                                <button class="btn btn-outline-warning" onclick="timeoutUser()">
+                                                    <i class="fas fa-clock me-2"></i>Timeout User
+                                                </button>
+                                                <button class="btn btn-outline-danger" onclick="banUser()">
+                                                    <i class="fas fa-ban me-2"></i>Ban User
+                                                </button>
+                                                <button class="btn btn-outline-info" onclick="promoteUser()">
+                                                    <i class="fas fa-crown me-2"></i>Make Moderator
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="card mt-3">
+                                        <div class="card-header">
+                                            <h6 class="mb-0">User Statistics</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row text-center">
+                                                <div class="col-12 mb-2">
+                                                    <strong id="totalOnlineUsers">0</strong>
+                                                    <br><small>Total Online</small>
+                                                </div>
+                                                <div class="col-6 mb-2">
+                                                    <strong id="registeredUsers">0</strong>
+                                                    <br><small>Registered</small>
+                                                </div>
+                                                <div class="col-6 mb-2">
+                                                    <strong id="anonymousUsers">0</strong>
+                                                    <br><small>Anonymous</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- AI Bot Tab -->
+                        <div class="tab-pane fade" id="ai-bot" role="tabpanel">
+                            <div class="row">
+                                <div class="col-lg-8">
+                                    <div class="ai-bot-settings mb-4">
+                                        <h5 class="mb-3">
+                                            <i class="fas fa-robot me-2"></i>StrophenBot AI Assistant
+                                        </h5>
+                                        <p class="mb-4">Configure the AI-powered chat bot that helps users with streaming questions and moderates content automatically.</p>
+                                        
+                                        <form id="aiBotSettingsForm">
+                                            <div class="row">
+                                                <div class="col-md-6 mb-3">
+                                                    <div class="form-check form-switch">
+                                                        <input class="form-check-input" type="checkbox" id="enableAIBot" checked>
+                                                        <label class="form-check-label text-white" for="enableAIBot">
+                                                            Enable AI Bot Responses
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6 mb-3">
+                                                    <div class="form-check form-switch">
+                                                        <input class="form-check-input" type="checkbox" id="enableAIModeration" checked>
+                                                        <label class="form-check-label text-white" for="enableAIModeration">
+                                                            Enable AI Content Moderation
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <label for="botResponseRate" class="form-label text-white">Response Rate</label>
+                                                <select class="form-select" id="botResponseRate">
+                                                    <option value="high">High - Responds to most questions</option>
+                                                    <option value="medium" selected>Medium - Responds to clear questions</option>
+                                                    <option value="low">Low - Only responds to help requests</option>
+                                                </select>
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <label for="moderationLevel" class="form-label text-white">Moderation Level</label>
+                                                <select class="form-select" id="moderationLevel">
+                                                    <option value="strict">Strict - Block questionable content</option>
+                                                    <option value="moderate" selected>Moderate - Standard filtering</option>
+                                                    <option value="lenient">Lenient - Only block obvious violations</option>
+                                                </select>
+                                            </div>
+                                            
+                                            <button type="submit" class="btn btn-light">
+                                                <i class="fas fa-save me-2"></i>Save AI Bot Settings
+                                            </button>
+                                        </form>
+                                    </div>
+                                    
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h6 class="mb-0">AI Bot Test Console</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="mb-3">
+                                                <label for="testMessage" class="form-label">Test Message</label>
+                                                <input type="text" class="form-control" id="testMessage" placeholder="How do I set up RTMP streaming?">
+                                            </div>
+                                            <button class="btn btn-primary" onclick="testAIBot()">
+                                                <i class="fas fa-play me-2"></i>Test AI Response
+                                            </button>
+                                            <div id="aiTestResult" class="mt-3"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-lg-4">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h6 class="mb-0">
+                                                <i class="fas fa-chart-bar me-2"></i>AI Bot Statistics
+                                            </h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row text-center">
+                                                <div class="col-12 mb-3">
+                                                    <div class="fw-bold text-success fs-4" id="botResponses">0</div>
+                                                    <small class="text-muted">Bot Responses Today</small>
+                                                </div>
+                                                <div class="col-6 mb-3">
+                                                    <div class="fw-bold text-warning fs-5" id="moderatedToday">0</div>
+                                                    <small class="text-muted">Moderated</small>
+                                                </div>
+                                                <div class="col-6 mb-3">
+                                                    <div class="fw-bold text-info fs-5" id="helpResponses">0</div>
+                                                    <small class="text-muted">Help Provided</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="card mt-3">
+                                        <div class="card-header">
+                                            <h6 class="mb-0">Common Questions</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="small">
+                                                <div class="mb-2">
+                                                    <strong>RTMP Setup:</strong> 45 questions
+                                                </div>
+                                                <div class="mb-2">
+                                                    <strong>Stream Quality:</strong> 32 questions
+                                                </div>
+                                                <div class="mb-2">
+                                                    <strong>OBS Configuration:</strong> 28 questions
+                                                </div>
+                                                <div class="mb-2">
+                                                    <strong>Chat Features:</strong> 19 questions
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Settings Tab -->
+                        <div class="tab-pane fade" id="settings" role="tabpanel">
+                            <div class="row">
+                                <div class="col-lg-8">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h5 class="mb-0">
+                                                <i class="fas fa-cogs me-2"></i>Chat Settings
+                                            </h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <form id="chatSettingsForm">
+                                                <div class="row">
+                                                    <div class="col-md-6 mb-3">
+                                                        <div class="form-check form-switch">
+                                                            <input class="form-check-input" type="checkbox" id="enableChat" checked>
+                                                            <label class="form-check-label" for="enableChat">
+                                                                Enable Chat System
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6 mb-3">
+                                                        <div class="form-check form-switch">
+                                                            <input class="form-check-input" type="checkbox" id="requireRegistration">
+                                                            <label class="form-check-label" for="requireRegistration">
+                                                                Require Registration to Chat
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="row">
+                                                    <div class="col-md-6 mb-3">
+                                                        <label for="maxMessageLength" class="form-label">Max Message Length</label>
+                                                        <input type="number" class="form-control" id="maxMessageLength" value="500" min="50" max="2000">
+                                                    </div>
+                                                    <div class="col-md-6 mb-3">
+                                                        <label for="slowModeDelay" class="form-label">Slow Mode Delay (seconds)</label>
+                                                        <input type="number" class="form-control" id="slowModeDelay" value="0" min="0" max="300">
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="mb-3">
+                                                    <label for="bannedWords" class="form-label">Banned Words (comma-separated)</label>
+                                                    <textarea class="form-control" id="bannedWords" rows="3" placeholder="spam, scam, fake, bot..."></textarea>
+                                                </div>
+                                                
+                                                <div class="row">
+                                                    <div class="col-md-6 mb-3">
+                                                        <div class="form-check form-switch">
+                                                            <input class="form-check-input" type="checkbox" id="enableEmotes" checked>
+                                                            <label class="form-check-label" for="enableEmotes">
+                                                                Enable Custom Emotes
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6 mb-3">
+                                                        <div class="form-check form-switch">
+                                                            <input class="form-check-input" type="checkbox" id="enableLinks">
+                                                            <label class="form-check-label" for="enableLinks">
+                                                                Allow Links in Chat
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <button type="submit" class="btn btn-primary">
+                                                    <i class="fas fa-save me-2"></i>Save Chat Settings
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-lg-4">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h6 class="mb-0">Moderation Tools</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="d-grid gap-2">
+                                                <button class="btn btn-outline-primary" onclick="addModerator()">
+                                                    <i class="fas fa-plus me-2"></i>Add Moderator
+                                                </button>
+                                                <button class="btn btn-outline-warning" onclick="viewBannedUsers()">
+                                                    <i class="fas fa-ban me-2"></i>View Banned Users
+                                                </button>
+                                                <button class="btn btn-outline-info" onclick="exportLogs()">
+                                                    <i class="fas fa-file-export me-2"></i>Export Chat Logs
+                                                </button>
+                                                <button class="btn btn-outline-danger" onclick="clearAllChats()">
+                                                    <i class="fas fa-trash-alt me-2"></i>Clear All Chats
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="card mt-3">
+                                        <div class="card-header">
+                                            <h6 class="mb-0">Chat Health</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between mb-2">
+                                                <span>Server Status</span>
+                                                <span class="badge bg-success">Online</span>
+                                            </div>
+                                            <div class="d-flex justify-content-between mb-2">
+                                                <span>WebSocket Connections</span>
+                                                <span id="wsConnections">0</span>
+                                            </div>
+                                            <div class="d-flex justify-content-between mb-2">
+                                                <span>Messages/Hour</span>
+                                                <span id="messagesPerHour">0</span>
+                                            </div>
+                                            <div class="d-flex justify-content-between">
+                                                <span>AI Bot Status</span>
+                                                <span class="badge bg-success" id="aiBotStatus">Active</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+<script>
+// Chat Management JavaScript
+let socket;
+let currentStreamId = null;
+let messageCount = 0;
+let lastMessageTime = Date.now();
+
+document.addEventListener('DOMContentLoaded', function() {
+    initializeChatManagement();
+    connectWebSocket();
+    loadInitialData();
+});
+
+function initializeChatManagement() {
+    // Initialize form handlers
+    document.getElementById('aiBotSettingsForm').addEventListener('submit', saveAIBotSettings);
+    document.getElementById('chatSettingsForm').addEventListener('submit', saveChatSettings);
+    
+    // Set up auto-refresh
+    setInterval(updateStats, 30000); // Update every 30 seconds
+}
+
+function connectWebSocket() {
+    socket = io();
+    
+    socket.on('connect', function() {
+        console.log('Connected to chat server');
+        document.getElementById('aiBotStatus').className = 'badge bg-success';
+        document.getElementById('aiBotStatus').textContent = 'Active';
+    });
+    
+    socket.on('disconnect', function() {
+        console.log('Disconnected from chat server');
+        document.getElementById('aiBotStatus').className = 'badge bg-danger';
+        document.getElementById('aiBotStatus').textContent = 'Offline';
+    });
+    
+    socket.on('new_message', function(data) {
+        addLiveMessage(data);
+        messageCount++;
+        updateStats();
+    });
+    
+    socket.on('user_joined', function(data) {
+        updateOnlineUsers();
+    });
+    
+    socket.on('user_left', function(data) {
+        updateOnlineUsers();
+    });
+    
+    socket.on('message_deleted', function(data) {
+        removeLiveMessage(data.message_id);
+    });
+}
+
+function loadInitialData() {
+    // Load chat statistics
+    fetch('/api/chat/stats')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateStatsDisplay(data.stats);
+            }
+        })
+        .catch(error => console.error('Error loading stats:', error));
+    
+    // Load online users
+    updateOnlineUsers();
+}
+
+function switchStream() {
+    const streamSelect = document.getElementById('streamSelect');
+    currentStreamId = streamSelect.value;
+    
+    if (currentStreamId) {
+        socket.emit('join_stream_chat', {stream_id: currentStreamId});
+    }
+    
+    loadLiveMessages();
+}
+
+function addLiveMessage(messageData) {
+    const container = document.getElementById('liveMessages');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `chat-message ${messageData.is_bot ? 'bot-message' : ''}`;
+    messageDiv.setAttribute('data-message-id', messageData.id);
+    
+    const timestamp = new Date(messageData.timestamp).toLocaleTimeString();
+    
+    messageDiv.innerHTML = `
+        <div class="d-flex justify-content-between align-items-start">
+            <div class="flex-grow-1">
+                <div class="d-flex align-items-center mb-1">
+                    <strong class="me-2">
+                        ${messageData.is_bot ? '<i class="fas fa-robot me-1 text-success"></i>' : ''}
+                        ${messageData.username}
+                    </strong>
+                    <small class="text-muted">${timestamp}</small>
+                </div>
+                <div class="message-content">${messageData.message}</div>
+            </div>
+            <div class="message-actions">
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteMessage(${messageData.id})">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    `;
+    
+    container.appendChild(messageDiv);
+    
+    // Auto-scroll to bottom
+    const chatContainer = document.getElementById('liveChatContainer');
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+    
+    // Limit messages in live view
+    const messages = container.children;
+    if (messages.length > 100) {
+        container.removeChild(messages[0]);
+    }
+}
+
+function removeLiveMessage(messageId) {
+    const messageDiv = document.querySelector(`[data-message-id="${messageId}"]`);
+    if (messageDiv) {
+        messageDiv.classList.add('deleted-message');
+        const content = messageDiv.querySelector('.message-content');
+        content.innerHTML = '<em class="text-muted">[Message deleted]</em>';
+    }
+}
+
+function sendAdminMessage() {
+    const input = document.getElementById('adminMessageInput');
+    const message = input.value.trim();
+    
+    if (!message || !currentStreamId) return;
+    
+    socket.emit('send_message', {
+        stream_id: currentStreamId,
+        message: message
+    });
+    
+    input.value = '';
+}
+
+function deleteMessage(messageId) {
+    if (confirm('Are you sure you want to delete this message?')) {
+        socket.emit('delete_message', {message_id: messageId});
+    }
+}
+
+function updateOnlineUsers() {
+    fetch('/api/chat/online-users')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayOnlineUsers(data.users);
+                updateUserStats(data.stats);
+            }
+        })
+        .catch(error => console.error('Error loading online users:', error));
+}
+
+function displayOnlineUsers(users) {
+    const container = document.getElementById('onlineUsersContainer');
+    container.innerHTML = '';
+    
+    users.forEach(user => {
+        const userDiv = document.createElement('div');
+        userDiv.className = 'online-user';
+        userDiv.innerHTML = `
+            <i class="fas fa-user me-2"></i>
+            ${user.username}
+            <small class="text-muted ms-2">${user.stream_title || 'General'}</small>
+        `;
+        container.appendChild(userDiv);
+    });
+}
+
+function updateUserStats(stats) {
+    document.getElementById('totalOnlineUsers').textContent = stats.total || 0;
+    document.getElementById('registeredUsers').textContent = stats.registered || 0;
+    document.getElementById('anonymousUsers').textContent = stats.anonymous || 0;
+}
+
+function updateStats() {
+    const now = Date.now();
+    const timeDiff = (now - lastMessageTime) / 1000 / 60; // minutes
+    const messagesPerMinute = timeDiff > 0 ? Math.round(messageCount / timeDiff) : 0;
+    
+    document.getElementById('messagesPerMinute').textContent = messagesPerMinute;
+    document.getElementById('wsConnections').textContent = socket.connected ? '1' : '0';
+    
+    lastMessageTime = now;
+}
+
+function updateStatsDisplay(stats) {
+    document.getElementById('totalMessages').textContent = stats.total_messages || 0;
+    document.getElementById('activeUsers').textContent = stats.active_users || 0;
+    document.getElementById('moderatedMessages').textContent = stats.moderated || 0;
+    document.getElementById('botResponses').textContent = stats.bot_responses || 0;
+    document.getElementById('helpResponses').textContent = stats.help_responses || 0;
+    document.getElementById('moderatedToday').textContent = stats.moderated_today || 0;
+    document.getElementById('messagesPerHour').textContent = stats.messages_per_hour || 0;
+}
+
+function saveAIBotSettings(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(e.target);
+    const settings = {
+        enable_ai_bot: document.getElementById('enableAIBot').checked,
+        enable_ai_moderation: document.getElementById('enableAIModeration').checked,
+        bot_response_rate: document.getElementById('botResponseRate').value,
+        moderation_level: document.getElementById('moderationLevel').value
+    };
+    
+    fetch('/api/chat/ai-bot-settings', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(settings)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', 'AI Bot settings saved successfully!');
+        } else {
+            showAlert('danger', data.error || 'Failed to save settings');
+        }
+    })
+    .catch(error => {
+        showAlert('danger', 'Error saving settings: ' + error.message);
+    });
+}
+
+function saveChatSettings(e) {
+    e.preventDefault();
+    
+    const settings = {
+        enable_chat: document.getElementById('enableChat').checked,
+        require_registration: document.getElementById('requireRegistration').checked,
+        max_message_length: parseInt(document.getElementById('maxMessageLength').value),
+        slow_mode_delay: parseInt(document.getElementById('slowModeDelay').value),
+        banned_words: document.getElementById('bannedWords').value,
+        enable_emotes: document.getElementById('enableEmotes').checked,
+        enable_links: document.getElementById('enableLinks').checked
+    };
+    
+    fetch('/api/chat/settings', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(settings)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('success', 'Chat settings saved successfully!');
+        } else {
+            showAlert('danger', data.error || 'Failed to save settings');
+        }
+    })
+    .catch(error => {
+        showAlert('danger', 'Error saving settings: ' + error.message);
+    });
+}
+
+function testAIBot() {
+    const message = document.getElementById('testMessage').value.trim();
+    if (!message) return;
+    
+    fetch('/api/chat/test-ai-bot', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({message: message})
+    })
+    .then(response => response.json())
+    .then(data => {
+        const resultDiv = document.getElementById('aiTestResult');
+        if (data.success) {
+            resultDiv.innerHTML = `
+                <div class="alert alert-success">
+                    <strong>AI Response:</strong><br>
+                    ${data.response || 'No response generated'}
+                </div>
+            `;
+        } else {
+            resultDiv.innerHTML = `
+                <div class="alert alert-danger">
+                    <strong>Error:</strong> ${data.error}
+                </div>
+            `;
+        }
+    })
+    .catch(error => {
+        document.getElementById('aiTestResult').innerHTML = `
+            <div class="alert alert-danger">
+                <strong>Error:</strong> ${error.message}
+            </div>
+        `;
+    });
+}
+
+function refreshChatData() {
+    loadInitialData();
+    updateOnlineUsers();
+    showAlert('info', 'Chat data refreshed');
+}
+
+function exportChatHistory() {
+    window.open('/api/chat/export', '_blank');
+}
+
+function loadLiveMessages() {
+    if (!currentStreamId) return;
+    
+    document.getElementById('liveMessages').innerHTML = '';
+    socket.emit('join_stream_chat', {stream_id: currentStreamId});
+}
+
+// Utility functions
+function enableSlowMode() {
+    const delay = prompt('Enter slow mode delay in seconds (0 to disable):');
+    if (delay !== null) {
+        document.getElementById('slowModeDelay').value = delay;
+        showAlert('info', `Slow mode ${delay > 0 ? 'enabled' : 'disabled'}`);
+    }
+}
+
+function clearChat() {
+    if (confirm('Are you sure you want to clear the current chat?')) {
+        socket.emit('clear_chat', {stream_id: currentStreamId});
+        document.getElementById('liveMessages').innerHTML = '';
+        showAlert('warning', 'Chat cleared');
+    }
+}
+
+function toggleAIBot() {
+    const checkbox = document.getElementById('enableAIBot');
+    checkbox.checked = !checkbox.checked;
+    saveAIBotSettings({preventDefault: () => {}, target: document.getElementById('aiBotSettingsForm')});
+}
+
+function showAlert(type, message) {
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alert.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.body.appendChild(alert);
+    
+    setTimeout(() => {
+        if (alert.parentNode) {
+            alert.remove();
+        }
+    }, 5000);
+}
+</script>
+{% endblock %}

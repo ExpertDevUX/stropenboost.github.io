@@ -1,0 +1,393 @@
+{% extends "base.html" %}
+
+{% block title %}Broadcaster Dashboard - StrophenBoost{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-lg-3 col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-user-circle me-2"></i>{{ user.username }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createStreamModal">
+                            <i class="fas fa-plus me-2"></i>Create Stream
+                        </button>
+                        <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#createRTMPKeyModal">
+                            <i class="fas fa-key me-2"></i>Create RTMP Key
+                        </button>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="text-center">
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <h6 class="text-muted">Total Streams</h6>
+                                <h4 class="text-primary">{{ streams|length }}</h4>
+                            </div>
+                            <div class="col-6">
+                                <h6 class="text-muted">Active Keys</h6>
+                                <h4 class="text-success">{{ rtmp_keys|selectattr("is_active")|list|length }}</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="col-lg-9 col-md-8">
+            <!-- Live Streams -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-broadcast-tower me-2 text-danger"></i>Live Streams
+                    </h5>
+                    <span class="badge bg-danger">{{ streams|selectattr("is_live")|list|length }} Live</span>
+                </div>
+                <div class="card-body">
+                    {% set live_streams = streams|selectattr("is_live")|list %}
+                    {% if live_streams %}
+                        <div class="row">
+                            {% for stream in live_streams %}
+                            <div class="col-md-6 mb-3">
+                                <div class="card border-danger">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <h6 class="card-title">{{ stream.title }}</h6>
+                                                <p class="card-text text-muted small">{{ stream.description[:100] }}...</p>
+                                                <div class="d-flex align-items-center text-muted small">
+                                                    <i class="fas fa-eye me-1"></i>{{ stream.viewer_count }} viewers
+                                                    <i class="fas fa-clock ms-3 me-1"></i>Started {{ stream.started_at.strftime('%H:%M') }}
+                                                </div>
+                                            </div>
+                                            <div class="dropdown">
+                                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                                                    <i class="fas fa-cog"></i>
+                                                </button>
+                                                <ul class="dropdown-menu">
+                                                    <li><a class="dropdown-item" href="{{ url_for('view_stream', stream_id=stream.id) }}" target="_blank">
+                                                        <i class="fas fa-external-link-alt me-2"></i>View Stream
+                                                    </a></li>
+                                                    <li><a class="dropdown-item" href="#" onclick="getEmbedCode({{ stream.id }})">
+                                                        <i class="fas fa-code me-2"></i>Embed Code
+                                                    </a></li>
+                                                    <li><a class="dropdown-item" href="#" onclick="viewAnalytics({{ stream.id }})">
+                                                        <i class="fas fa-chart-line me-2"></i>Analytics
+                                                    </a></li>
+                                                    <li><hr class="dropdown-divider"></li>
+                                                    <li><a class="dropdown-item text-danger" href="#" onclick="stopStream({{ stream.id }})">
+                                                        <i class="fas fa-stop me-2"></i>Stop Stream
+                                                    </a></li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-broadcast-tower fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No live streams</h5>
+                            <p class="text-muted">Create a stream and start broadcasting!</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- All Streams -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-video me-2"></i>All Streams
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if streams %}
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="streamsTable">
+                                <thead>
+                                    <tr>
+                                        <th>Title</th>
+                                        <th>Status</th>
+                                        <th>Views</th>
+                                        <th>Created</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for stream in streams %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ stream.title }}</strong>
+                                            {% if stream.description %}
+                                                <br><small class="text-muted">{{ stream.description[:50] }}...</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if stream.is_live %}
+                                                <span class="badge bg-danger">
+                                                    <i class="fas fa-circle me-1"></i>Live
+                                                </span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Offline</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <i class="fas fa-eye me-1"></i>{{ stream.total_views or 0 }}
+                                            {% if stream.max_viewers and stream.max_viewers > 0 %}
+                                                <br><small class="text-muted">Peak: {{ stream.max_viewers }}</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>{{ stream.created_at.strftime('%m/%d/%Y') }}</td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                {% if not stream.is_live %}
+                                                <button class="btn btn-success" onclick="startStream({{ stream.id }})">
+                                                    <i class="fas fa-play"></i>
+                                                </button>
+                                                {% else %}
+                                                <button class="btn btn-danger" onclick="stopStream({{ stream.id }})">
+                                                    <i class="fas fa-stop"></i>
+                                                </button>
+                                                {% endif %}
+                                                <button class="btn btn-outline-secondary" onclick="showEmbedCode({{ stream.id }})">
+                                                    <i class="fas fa-code"></i>
+                                                </button>
+                                                <button class="btn btn-outline-info" onclick="showAnalytics({{ stream.id }})">
+                                                    <i class="fas fa-chart-line"></i>
+                                                </button>
+                                                <button class="btn btn-outline-danger" onclick="deleteStream({{ stream.id }})">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-video fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No streams created yet</h5>
+                            <p class="text-muted">Create your first stream to get started!</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- RTMP Keys -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-key me-2"></i>RTMP Keys
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if rtmp_keys %}
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="rtmpKeysTable">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Key</th>
+                                        <th>URL</th>
+                                        <th>Status</th>
+                                        <th>Type</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for key in rtmp_keys %}
+                                    <tr>
+                                        <td><strong>{{ key.key_name }}</strong></td>
+                                        <td>
+                                            <code class="rtmp-key">{{ key.rtmp_key[:8] }}...</code>
+                                            <button class="btn btn-sm btn-outline-secondary ms-2" onclick="copyToClipboard('{{ key.rtmp_key }}')">
+                                                <i class="fas fa-copy"></i>
+                                            </button>
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">{{ key.rtmp_url }}</small>
+                                        </td>
+                                        <td>
+                                            {% if key.is_active %}
+                                                <span class="badge bg-success">Active</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Inactive</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if key.is_external %}
+                                                <span class="badge bg-info">External</span>
+                                            {% else %}
+                                                <span class="badge bg-primary">Internal</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <button class="btn btn-sm btn-danger" onclick="deleteRTMPKey({{ key.id }})">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-key fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No RTMP keys created</h5>
+                            <p class="text-muted">Create RTMP keys to connect external streaming software!</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Stream Modal -->
+<div class="modal fade" id="createStreamModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form id="createStreamForm">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-plus me-2"></i>Create New Stream
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="streamTitle" class="form-label">Stream Title</label>
+                        <input type="text" class="form-control" id="streamTitle" name="title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="streamDescription" class="form-label">Description</label>
+                        <textarea class="form-control" id="streamDescription" name="description" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i>Create Stream
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Create RTMP Key Modal -->
+<div class="modal fade" id="createRTMPKeyModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="createRTMPKeyForm">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-key me-2"></i>Create RTMP Key
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="keyName" class="form-label">Key Name</label>
+                        <input type="text" class="form-control" id="keyName" name="key_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="rtmpUrl" class="form-label">RTMP URL</label>
+                        <input type="text" class="form-control" id="rtmpUrl" name="rtmp_url" value="rtmp://localhost:1935/live">
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="isExternal" name="is_external">
+                        <label class="form-check-label" for="isExternal">
+                            External RTMP Source
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-key me-1"></i>Create Key
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Embed Code Modal -->
+<div class="modal fade" id="embedCodeModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-code me-2"></i>Embed Code
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Standard Iframe</label>
+                    <textarea class="form-control" id="embedIframe" rows="4" readonly></textarea>
+                    <button class="btn btn-sm btn-outline-secondary mt-2" onclick="copyToClipboard(document.getElementById('embedIframe').value)">
+                        <i class="fas fa-copy me-1"></i>Copy
+                    </button>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Responsive Iframe</label>
+                    <textarea class="form-control" id="embedResponsive" rows="6" readonly></textarea>
+                    <button class="btn btn-sm btn-outline-secondary mt-2" onclick="copyToClipboard(document.getElementById('embedResponsive').value)">
+                        <i class="fas fa-copy me-1"></i>Copy
+                    </button>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">JavaScript Embed</label>
+                    <textarea class="form-control" id="embedJavaScript" rows="8" readonly></textarea>
+                    <button class="btn btn-sm btn-outline-secondary mt-2" onclick="copyToClipboard(document.getElementById('embedJavaScript').value)">
+                        <i class="fas fa-copy me-1"></i>Copy
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Analytics Modal -->
+<div class="modal fade" id="analyticsModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-chart-line me-2"></i>Stream Analytics
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="analyticsContent">
+                    <div class="text-center py-4">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

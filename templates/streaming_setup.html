@@ -1,0 +1,616 @@
+{% extends "base.html" %}
+
+{% block title %}Streaming Setup Guide - StrophenBoost{% endblock %}
+
+{% block extra_head %}
+<style>
+.setup-hero {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 4rem 0;
+    margin-bottom: 2rem;
+}
+
+.setup-hero h1 {
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+}
+
+.setup-hero p {
+    font-size: 1.2rem;
+    opacity: 0.9;
+}
+
+.software-card {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.software-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+}
+
+.software-logo {
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 1rem;
+}
+
+.setup-code {
+    background: #2d3748;
+    color: #e2e8f0;
+    padding: 1rem;
+    border-radius: 8px;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 0.9rem;
+    margin: 1rem 0;
+    overflow-x: auto;
+}
+
+.rtmp-settings {
+    background: #f7fafc;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin: 1rem 0;
+}
+
+.connection-test {
+    background: #f0fff4;
+    border: 2px solid #9ae6b4;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin: 2rem 0;
+}
+
+.test-result {
+    margin-top: 1rem;
+    padding: 1rem;
+    border-radius: 6px;
+    display: none;
+}
+
+.test-success {
+    background: #f0fff4;
+    border: 1px solid #9ae6b4;
+    color: #276749;
+}
+
+.test-error {
+    background: #fed7d7;
+    border: 1px solid #feb2b2;
+    color: #c53030;
+}
+
+.quality-table {
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.quality-table th {
+    background: #667eea;
+    color: white;
+    padding: 1rem;
+    font-weight: 600;
+}
+
+.quality-table td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.nav-tabs .nav-link {
+    border-radius: 8px 8px 0 0;
+    margin-right: 0.5rem;
+    border: none;
+    background: #f7fafc;
+    color: #4a5568;
+    font-weight: 500;
+}
+
+.nav-tabs .nav-link.active {
+    background: #667eea;
+    color: white;
+}
+
+.btn-copy {
+    background: #667eea;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.btn-copy:hover {
+    background: #5a67d8;
+    transform: translateY(-1px);
+}
+
+.streaming-url {
+    background: #f7fafc;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 1rem;
+    font-family: monospace;
+    font-size: 1rem;
+    word-break: break-all;
+    margin: 1rem 0;
+}
+
+@media (max-width: 768px) {
+    .setup-hero h1 {
+        font-size: 2rem;
+    }
+    
+    .software-card {
+        padding: 1.5rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<div class="setup-hero">
+    <div class="container text-center">
+        <h1><i class="fas fa-broadcast-tower me-3"></i>Streaming Setup Guide</h1>
+        <p>Configure OBS, vMix, and other streaming software to work with StrophenBoost</p>
+    </div>
+</div>
+
+<div class="container">
+    <!-- Connection Test -->
+    <div class="connection-test">
+        <h4><i class="fas fa-wifi me-2"></i>Test Your Connection</h4>
+        <p>First, let's make sure our RTMP server is running and ready to accept your stream.</p>
+        
+        <button id="testConnection" class="btn btn-primary">
+            <i class="fas fa-play me-2"></i>Test RTMP Connection
+        </button>
+        
+        <div id="connectionResult" class="test-result"></div>
+        
+        {% if current_user.is_authenticated %}
+        <div class="mt-3">
+            <button id="generateKey" class="btn btn-success">
+                <i class="fas fa-key me-2"></i>Generate New Stream Key
+            </button>
+        </div>
+        
+        <div id="streamKeyResult" class="test-result"></div>
+        {% endif %}
+    </div>
+
+    <!-- Navigation Tabs -->
+    <ul class="nav nav-tabs" id="softwareTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="obs-tab" data-bs-toggle="tab" data-bs-target="#obs" type="button" role="tab">
+                <i class="fas fa-video me-2"></i>OBS Studio
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="vmix-tab" data-bs-toggle="tab" data-bs-target="#vmix" type="button" role="tab">
+                <i class="fas fa-play-circle me-2"></i>vMix
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="xsplit-tab" data-bs-toggle="tab" data-bs-target="#xsplit" type="button" role="tab">
+                <i class="fas fa-desktop me-2"></i>XSplit
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="mobile-tab" data-bs-toggle="tab" data-bs-target="#mobile" type="button" role="tab">
+                <i class="fas fa-mobile-alt me-2"></i>Mobile Apps
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="softwareTabContent">
+        <!-- OBS Studio -->
+        <div class="tab-pane fade show active" id="obs" role="tabpanel">
+            <div class="software-card">
+                <div class="d-flex align-items-start">
+                    <div class="software-logo me-3">
+                        OBS
+                    </div>
+                    <div class="flex-grow-1">
+                        <h3>OBS Studio Configuration</h3>
+                        <p class="text-muted">The most popular free streaming software, perfect for beginners and professionals.</p>
+                    </div>
+                </div>
+
+                <h5 class="mt-4 mb-3">Step 1: Stream Settings</h5>
+                <ol>
+                    <li>Open OBS Studio</li>
+                    <li>Go to <strong>Settings</strong> → <strong>Stream</strong></li>
+                    <li>Configure the following settings:</li>
+                </ol>
+
+                <div class="rtmp-settings">
+                    <h6><i class="fas fa-cog me-2"></i>RTMP Configuration</h6>
+                    <div class="setup-code">
+Service: Custom...
+Server: rtmp://{{ request.host.split(':')[0] }}:1935/live
+Stream Key: [Your StrophenBoost Stream Key]
+                    </div>
+                    <button class="btn-copy" onclick="copyToClipboard('rtmp://{{ request.host.split(':')[0] }}:1935/live')">
+                        <i class="fas fa-copy me-1"></i>Copy Server URL
+                    </button>
+                </div>
+
+                <h5 class="mt-4 mb-3">Step 2: Recommended Settings</h5>
+                
+                <h6>Output Settings (Advanced Mode)</h6>
+                <div class="setup-code">
+Output Mode: Advanced
+Encoder: x264 (CPU) or NVENC H.264 (GPU)
+Rate Control: CBR
+Bitrate: 2500 Kbps (1080p) or 1500 Kbps (720p)
+Keyframe Interval: 2 seconds
+Preset: veryfast
+Profile: high
+                </div>
+
+                <h6>Video Settings</h6>
+                <div class="setup-code">
+Base Resolution: 1920x1080
+Output Resolution: 1920x1080 (or 1280x720)
+FPS: 30 or 60
+                </div>
+
+                <h6>Audio Settings</h6>
+                <div class="setup-code">
+Sample Rate: 44.1 kHz
+Channels: Stereo
+Bitrate: 128 kbps
+                </div>
+            </div>
+        </div>
+
+        <!-- vMix -->
+        <div class="tab-pane fade" id="vmix" role="tabpanel">
+            <div class="software-card">
+                <div class="d-flex align-items-start">
+                    <div class="software-logo me-3">
+                        vMX
+                    </div>
+                    <div class="flex-grow-1">
+                        <h3>vMix Configuration</h3>
+                        <p class="text-muted">Professional live production software with advanced features and multi-camera support.</p>
+                    </div>
+                </div>
+
+                <h5 class="mt-4 mb-3">Stream Output Setup</h5>
+                <ol>
+                    <li>Open vMix</li>
+                    <li>Go to <strong>Settings</strong> → <strong>Outputs</strong> → <strong>Stream</strong></li>
+                    <li>Configure the stream settings:</li>
+                </ol>
+
+                <div class="rtmp-settings">
+                    <h6><i class="fas fa-cog me-2"></i>vMix Stream Configuration</h6>
+                    <div class="setup-code">
+Destination: Custom RTMP Server
+URL: rtmp://{{ request.host.split(':')[0] }}:1935/live/[Your_Stream_Key]
+Quality: High (or customize based on bandwidth)
+                    </div>
+                </div>
+
+                <h5 class="mt-4 mb-3">Recommended Settings</h5>
+                <div class="setup-code">
+Format: MP4
+Video Codec: H.264
+Audio Codec: AAC
+Frame Rate: 30fps
+Video Bitrate: 2500 kbps
+Audio Bitrate: 128 kbps
+Resolution: 1920x1080 or 1280x720
+                </div>
+            </div>
+        </div>
+
+        <!-- XSplit -->
+        <div class="tab-pane fade" id="xsplit" role="tabpanel">
+            <div class="software-card">
+                <div class="d-flex align-items-start">
+                    <div class="software-logo me-3">
+                        XS
+                    </div>
+                    <div class="flex-grow-1">
+                        <h3>XSplit Broadcaster</h3>
+                        <p class="text-muted">User-friendly streaming software with built-in scene transitions and effects.</p>
+                    </div>
+                </div>
+
+                <h5 class="mt-4 mb-3">Setup Instructions</h5>
+                <ol>
+                    <li>Open XSplit Broadcaster</li>
+                    <li>Go to <strong>Outputs</strong> → <strong>Set up a new output</strong></li>
+                    <li>Choose <strong>Custom RTMP</strong></li>
+                </ol>
+
+                <div class="rtmp-settings">
+                    <h6><i class="fas fa-cog me-2"></i>XSplit Configuration</h6>
+                    <div class="setup-code">
+Name: StrophenBoost
+RTMP URL: rtmp://{{ request.host.split(':')[0] }}:1935/live
+Stream Name/Key: [Your Stream Key]  
+Username: (leave blank)
+Password: (leave blank)
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Apps -->
+        <div class="tab-pane fade" id="mobile" role="tabpanel">
+            <div class="software-card">
+                <div class="d-flex align-items-start">
+                    <div class="software-logo me-3">
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h3>Mobile Streaming Apps</h3>
+                        <p class="text-muted">Stream directly from your smartphone or tablet using professional mobile apps.</p>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5><i class="fab fa-apple me-2"></i>iOS Apps</h5>
+                        <ul>
+                            <li><strong>Larix Broadcaster</strong> - Professional RTMP streaming</li>
+                            <li><strong>Live:Air Solo</strong> - Simple live streaming</li>
+                            <li><strong>Streamlabs Mobile</strong> - User-friendly interface</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h5><i class="fab fa-android me-2"></i>Android Apps</h5>
+                        <ul>
+                            <li><strong>Larix Broadcaster</strong> - Cross-platform professional app</li>
+                            <li><strong>CameraFi Live</strong> - Easy mobile streaming</li>
+                            <li><strong>Streamlabs Mobile</strong> - Complete streaming solution</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="rtmp-settings">
+                    <h6><i class="fas fa-mobile-alt me-2"></i>Mobile App Configuration</h6>
+                    <div class="setup-code">
+RTMP URL: rtmp://{{ request.host.split(':')[0] }}:1935/live
+Stream Key: [Your StrophenBoost Stream Key]
+Video Quality: 720p30 (recommended for mobile)
+Bitrate: 1500-2000 kbps
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quality Guidelines -->
+    <div class="software-card">
+        <h3><i class="fas fa-chart-line me-2"></i>Streaming Quality Guidelines</h3>
+        <p>Choose the right settings based on your internet connection and content type:</p>
+        
+        <div class="quality-table">
+            <table class="table table-borderless mb-0">
+                <thead>
+                    <tr>
+                        <th>Resolution</th>
+                        <th>Frame Rate</th>
+                        <th>Video Bitrate</th>
+                        <th>Audio Bitrate</th>
+                        <th>Upload Required</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>720p</td>
+                        <td>30fps</td>
+                        <td>1500-2000k</td>
+                        <td>128k</td>
+                        <td>2-3 Mbps</td>
+                    </tr>
+                    <tr>
+                        <td>720p</td>
+                        <td>60fps</td>
+                        <td>2000-2500k</td>
+                        <td>128k</td>
+                        <td>3-4 Mbps</td>
+                    </tr>
+                    <tr>
+                        <td>1080p</td>
+                        <td>30fps</td>
+                        <td>2500-3000k</td>
+                        <td>128k</td>
+                        <td>4-5 Mbps</td>
+                    </tr>
+                    <tr>
+                        <td>1080p</td>
+                        <td>60fps</td>
+                        <td>4000-5000k</td>
+                        <td>128k</td>
+                        <td>6-7 Mbps</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Troubleshooting -->
+    <div class="software-card">
+        <h3><i class="fas fa-tools me-2"></i>Troubleshooting</h3>
+        
+        <h5>Connection Issues</h5>
+        <ul>
+            <li>Check your internet connection speed</li>
+            <li>Verify the RTMP URL is correct</li>
+            <li>Ensure port 1935 is not blocked by firewall</li>
+            <li>Try generating a new stream key</li>
+        </ul>
+
+        <h5>Poor Stream Quality</h5>
+        <ul>
+            <li>Reduce bitrate settings</li>
+            <li>Lower resolution (1080p → 720p)</li>
+            <li>Decrease frame rate (60fps → 30fps)</li>
+            <li>Check CPU/GPU usage in streaming software</li>
+        </ul>
+
+        <h5>Dropped Frames</h5>
+        <ul>
+            <li>Lower video bitrate</li>
+            <li>Change encoder preset to "veryfast"</li>
+            <li>Close unnecessary applications</li>
+            <li>Use hardware encoding if available</li>
+        </ul>
+    </div>
+
+    <!-- Need Help -->
+    <div class="text-center mb-5">
+        <h4>Need Additional Help?</h4>
+        <p>Contact our support team or check the complete documentation for more advanced configurations.</p>
+        <a href="/contact" class="btn btn-primary me-3">
+            <i class="fas fa-envelope me-2"></i>Contact Support
+        </a>
+        <a href="/documentation" class="btn btn-outline-primary">
+            <i class="fas fa-book me-2"></i>View Documentation
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Test RTMP connection
+document.getElementById('testConnection').addEventListener('click', function() {
+    const button = this;
+    const result = document.getElementById('connectionResult');
+    
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Testing...';
+    
+    fetch('/api/streaming/test-connection')
+    .then(response => response.json())
+    .then(data => {
+        result.style.display = 'block';
+        
+        if (data.status === 'success') {
+            result.className = 'test-result test-success';
+            result.innerHTML = `
+                <h6><i class="fas fa-check-circle me-2"></i>Connection Successful!</h6>
+                <p>${data.message}</p>
+                <div class="streaming-url">
+                    <strong>RTMP URL:</strong> ${data.rtmp_url}<br>
+                    <strong>Stream Key:</strong> ${data.stream_key}
+                </div>
+            `;
+        } else {
+            result.className = 'test-result test-error';
+            result.innerHTML = `
+                <h6><i class="fas fa-exclamation-triangle me-2"></i>Connection Failed</h6>
+                <p>${data.message}</p>
+            `;
+        }
+    })
+    .catch(error => {
+        result.style.display = 'block';
+        result.className = 'test-result test-error';
+        result.innerHTML = `
+            <h6><i class="fas fa-exclamation-triangle me-2"></i>Error</h6>
+            <p>Failed to test connection: ${error.message}</p>
+        `;
+    })
+    .finally(() => {
+        button.disabled = false;
+        button.innerHTML = '<i class="fas fa-play me-2"></i>Test RTMP Connection';
+    });
+});
+
+// Generate stream key
+{% if current_user.is_authenticated %}
+document.getElementById('generateKey').addEventListener('click', function() {
+    const button = this;
+    const result = document.getElementById('streamKeyResult');
+    
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Generating...';
+    
+    fetch('/api/streaming/generate-key')
+    .then(response => response.json())
+    .then(data => {
+        result.style.display = 'block';
+        
+        if (data.status === 'success') {
+            result.className = 'test-result test-success';
+            result.innerHTML = `
+                <h6><i class="fas fa-key me-2"></i>New Stream Key Generated!</h6>
+                <div class="streaming-url">
+                    <strong>Stream Key:</strong> ${data.stream_key}<br>
+                    <strong>Full RTMP URL:</strong> ${data.full_url}
+                </div>
+                <button class="btn btn-sm btn-outline-primary mt-2" onclick="copyToClipboard('${data.stream_key}')">
+                    <i class="fas fa-copy me-1"></i>Copy Stream Key
+                </button>
+            `;
+        } else {
+            result.className = 'test-result test-error';
+            result.innerHTML = `
+                <h6><i class="fas fa-exclamation-triangle me-2"></i>Generation Failed</h6>
+                <p>${data.message}</p>
+            `;
+        }
+    })
+    .catch(error => {
+        result.style.display = 'block';
+        result.className = 'test-result test-error';
+        result.innerHTML = `
+            <h6><i class="fas fa-exclamation-triangle me-2"></i>Error</h6>
+            <p>Failed to generate key: ${error.message}</p>
+        `;
+    })
+    .finally(() => {
+        button.disabled = false;
+        button.innerHTML = '<i class="fas fa-key me-2"></i>Generate New Stream Key';
+    });
+});
+{% endif %}
+
+// Copy to clipboard function
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(function() {
+        // Show toast or notification
+        const toast = document.createElement('div');
+        toast.className = 'alert alert-success position-fixed';
+        toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 250px;';
+        toast.innerHTML = '<i class="fas fa-check me-2"></i>Copied to clipboard!';
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.remove();
+        }, 3000);
+    }).catch(function(err) {
+        console.error('Could not copy text: ', err);
+    });
+}
+</script>
+{% endblock %}

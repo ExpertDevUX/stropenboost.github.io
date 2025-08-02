@@ -1,0 +1,432 @@
+{% extends "base.html" %}
+
+{% block title %}Content Management - StrophenBoost{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="mb-0">
+                    <i class="fas fa-folder-open me-3"></i>Content Management
+                </h1>
+                <div class="btn-group">
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#moderateContentModal">
+                        <i class="fas fa-shield-alt me-1"></i>Moderate Content
+                    </button>
+                    <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#contentPolicyModal">
+                        <i class="fas fa-gavel me-1"></i>Content Policies
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Content Statistics -->
+            <div class="row mb-4">
+                <div class="col-md-3 mb-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <i class="fas fa-video fa-2x text-primary mb-2"></i>
+                            <h4 class="mb-1">{{ total_streams or 0 }}</h4>
+                            <small class="text-muted">Total Streams</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <i class="fas fa-play fa-2x text-success mb-2"></i>
+                            <h4 class="mb-1">{{ active_streams or 0 }}</h4>
+                            <small class="text-muted">Live Now</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <i class="fas fa-flag fa-2x text-warning mb-2"></i>
+                            <h4 class="mb-1">{{ reported_content or 0 }}</h4>
+                            <small class="text-muted">Reported Content</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <div class="card text-center">
+                        <div class="card-body">
+                            <i class="fas fa-ban fa-2x text-danger mb-2"></i>
+                            <h4 class="mb-1">{{ moderated_content or 0 }}</h4>
+                            <small class="text-muted">Moderated</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Content Filters -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-3">
+                            <select class="form-select" id="statusFilter">
+                                <option value="">All Status</option>
+                                <option value="live">Live</option>
+                                <option value="offline">Offline</option>
+                                <option value="reported">Reported</option>
+                                <option value="suspended">Suspended</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="categoryFilter">
+                                <option value="">All Categories</option>
+                                <option value="gaming">Gaming</option>
+                                <option value="music">Music</option>
+                                <option value="education">Education</option>
+                                <option value="entertainment">Entertainment</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="input-group">
+                                <input type="text" class="form-control" placeholder="Search content..." id="contentSearch">
+                                <button class="btn btn-outline-secondary" type="button">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn btn-outline-primary w-100">
+                                <i class="fas fa-filter me-1"></i>Filter
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Content Table -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">All Content</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Stream</th>
+                                    <th>Broadcaster</th>
+                                    <th>Status</th>
+                                    <th>Category</th>
+                                    <th>Viewers</th>
+                                    <th>Reports</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if streams %}
+                                    {% for stream in streams %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="stream-thumbnail me-3">
+                                                    <i class="fas fa-video"></i>
+                                                </div>
+                                                <div>
+                                                    <strong>{{ stream.title }}</strong>
+                                                    <br><small class="text-muted">{{ stream.description[:50] }}...</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>{{ stream.broadcaster.username if stream.broadcaster else 'Unknown' }}</td>
+                                        <td>
+                                            <span class="badge bg-{{ 'success' if stream.is_live else 'secondary' }}">
+                                                {{ 'Live' if stream.is_live else 'Offline' }}
+                                            </span>
+                                        </td>
+                                        <td>{{ stream.category or 'Uncategorized' }}</td>
+                                        <td>{{ stream.viewer_count or 0 }}</td>
+                                        <td>
+                                            <span class="badge bg-warning">0</span>
+                                        </td>
+                                        <td>{{ stream.created_at.strftime('%b %d') if stream.created_at else 'N/A' }}</td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <button class="btn btn-outline-primary" title="View Stream" onclick="window.open('/stream/{{ stream.id }}', '_blank')">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                <button class="btn btn-outline-warning" title="Edit Stream" onclick="editStream({{ stream.id }})">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button class="btn btn-outline-danger" title="Suspend Stream" onclick="suspendStream({{ stream.id }})">
+                                                    <i class="fas fa-ban"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                <tr>
+                                    <td colspan="8" class="text-center py-4">
+                                        <i class="fas fa-video fa-3x text-muted mb-3"></i>
+                                        <p class="text-muted mb-0">No content found</p>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Moderate Content Modal -->
+<div class="modal fade" id="moderateContentModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Content Moderation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Quick Actions</h6>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-warning">Review Reported Content</button>
+                            <button class="btn btn-info">Check Live Streams</button>
+                            <button class="btn btn-secondary">Generate Content Report</button>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Moderation Settings</h6>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="autoModeration">
+                            <label class="form-check-label" for="autoModeration">
+                                Enable Auto-Moderation
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="contentFilters">
+                            <label class="form-check-label" for="contentFilters">
+                                Apply Content Filters
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="chatModeration">
+                            <label class="form-check-label" for="chatModeration">
+                                Moderate Chat Messages
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary">Apply Settings</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Content Policy Modal -->
+<div class="modal fade" id="contentPolicyModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Content Policies</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="accordion" id="policyAccordion">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#policy1">
+                                Prohibited Content
+                            </button>
+                        </h2>
+                        <div id="policy1" class="accordion-collapse collapse show" data-bs-parent="#policyAccordion">
+                            <div class="accordion-body">
+                                <ul>
+                                    <li>Violence and harmful content</li>
+                                    <li>Harassment and bullying</li>
+                                    <li>Adult content and nudity</li>
+                                    <li>Spam and misleading content</li>
+                                    <li>Copyright infringement</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#policy2">
+                                Community Guidelines
+                            </button>
+                        </h2>
+                        <div id="policy2" class="accordion-collapse collapse" data-bs-parent="#policyAccordion">
+                            <div class="accordion-body">
+                                <ul>
+                                    <li>Respect all community members</li>
+                                    <li>Create authentic and original content</li>
+                                    <li>Follow platform terms of service</li>
+                                    <li>Report inappropriate behavior</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary">Update Policies</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.stream-thumbnail {
+    width: 40px;
+    height: 40px;
+    border-radius: 4px;
+    background: linear-gradient(135deg, #007bff, #0056b3);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+</style>
+{% endblock %}
+<script>
+// Stream action handlers
+function editStream(streamId) {
+    const title = prompt("Enter new stream title:");
+    if (title) {
+        fetch(`/content-management/edit/${streamId}`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ title: title })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert("success", data.message);
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showAlert("danger", data.error || "Failed to edit stream");
+            }
+        })
+        .catch(error => {
+            showAlert("danger", "Error editing stream: " + error.message);
+        });
+    }
+}
+
+function suspendStream(streamId) {
+    if (confirm("Are you sure you want to suspend this stream?")) {
+        fetch(`/content-management/suspend/${streamId}`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert("success", data.message);
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showAlert("danger", data.error || "Failed to suspend stream");
+            }
+        })
+        .catch(error => {
+            showAlert("danger", "Error suspending stream: " + error.message);
+        });
+    }
+}
+
+// Quick action handlers
+function reviewReportedContent() {
+    showAlert("info", "Opening reported content review panel...");
+}
+
+function checkLiveStreams() {
+    showAlert("info", "Checking all live streams for compliance...");
+}
+
+function generateContentReport() {
+    showAlert("info", "Generating comprehensive content report...");
+}
+
+// Alert helper function
+function showAlert(type, message) {
+    const alertContainer = document.querySelector(".container");
+    const alert = document.createElement("div");
+    alert.className = `alert alert-${type} alert-dismissible fade show`;
+    alert.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    alertContainer.insertBefore(alert, alertContainer.firstChild);
+    
+    setTimeout(() => {
+        if (alert.parentNode) {
+            alert.remove();
+        }
+    }, 5000);
+}
+
+// Search functionality
+document.addEventListener("DOMContentLoaded", function() {
+    document.getElementById("streamSearch").addEventListener("input", function(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        const rows = document.querySelectorAll("tbody tr");
+        
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(searchTerm) ? "" : "none";
+        });
+    });
+
+    // Moderation settings handlers
+    document.getElementById("autoModeration").addEventListener("change", function() {
+        applyModerationSettings();
+    });
+
+    document.getElementById("contentFilters").addEventListener("change", function() {
+        applyModerationSettings();
+    });
+
+    document.getElementById("chatModeration").addEventListener("change", function() {
+        applyModerationSettings();
+    });
+});
+
+function applyModerationSettings() {
+    const settings = {
+        auto_moderation: document.getElementById("autoModeration").checked,
+        content_filters: document.getElementById("contentFilters").checked,
+        chat_moderation: document.getElementById("chatModeration").checked
+    };
+    
+    fetch("/content-management/moderate", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(settings)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert("success", data.message);
+        } else {
+            showAlert("danger", data.error || "Failed to apply settings");
+        }
+    })
+    .catch(error => {
+        showAlert("danger", "Error applying settings: " + error.message);
+    });
+}
+</script>
+
