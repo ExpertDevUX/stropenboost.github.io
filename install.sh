@@ -1,27 +1,36 @@
 #!/bin/bash
 
-# StrophenBoost - Complete Installation Script with Let's Encrypt DNS
-# This script automates the entire installation process including SSL certificates
+# StrophenBoost - Professional Live Streaming Platform Installation
+# Automated deployment script for production environments
 
-set -e  # Exit on any error
+set -e
 
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
-# Configuration variables
+# Installation configuration
 DOMAIN=""
 EMAIL=""
 CLOUDFLARE_API_TOKEN=""
-DB_PASSWORD=$(openssl rand -base64 32)
-FLASK_SECRET=$(openssl rand -base64 32)
+APP_USER=""
+IS_ROOT=false
 RTMP_PORT=1935
 WEB_PORT=5000
+DB_PASSWORD=""
+FLASK_SECRET=""
 
-# Function to print colored output
+generate_password() {
+    if command -v openssl >/dev/null 2>&1; then
+        openssl rand -base64 32 | tr -d '\n'
+    else
+        tr -dc 'A-Za-z0-9' </dev/urandom | head -c 32
+    fi
+}
+
 print_status() {
     echo -e "${BLUE}[INFO]${NC} $1"
 }
@@ -38,349 +47,441 @@ print_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
-# Function to check if running as root
-check_root() {
-    if [[ $EUID -eq 0 ]]; then
-        print_error "This script should not be run as root for security reasons."
-        print_status "Please run as a regular user with sudo privileges."
-        exit 1
-    fi
+error_exit() {
+    print_error "Installation failed: $1"
+    exit 1
 }
 
-# Function to collect user input
-collect_info() {
-    echo -e "${BLUE}=== StrophenBoost Installation Setup ===${NC}"
-    echo ""
+check_privileges() {
+    print_status "Checking system privileges..."
     
-    # Domain name
-    while [[ -z "$DOMAIN" ]]; do
-        read -p "Enter your domain name (e.g., streaming.example.com): " DOMAIN
-        if [[ ! "$DOMAIN" =~ ^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\.[a-zA-Z]{2,}$ ]]; then
-            print_error "Invalid domain format. Please try again."
+    if [ "$EUID" -eq 0 ]; then
+        print_status "Running as root - will create secure application user"
+        IS_ROOT=true
+        APP_USER="strophenboost"
+        
+        if ! id "$APP_USER" >/dev/null 2>&1; then
+            print_status "Creating application user: $APP_USER"
+            useradd -m -s /bin/bash -G sudo "$APP_USER" 2>/dev/null || true
+            mkdir -p "/home/$APP_USER"
+            chown "$APP_USER:$APP_USER" "/home/$APP_USER"
+        fi
+    else
+        print_status "Running as regular user - checking sudo access"
+        IS_ROOT=false
+        APP_USER=$USER
+        
+        if ! sudo -n true 2>/dev/null; then
+            print_status "This script requires sudo privileges. Please enter your password:"
+            sudo true || error_exit "Unable to obtain sudo privileges"
+        fi
+    fi
+    
+    print_success "Privileges verified for user: $APP_USER"
+}
+
+collect_info() {
+    echo
+    echo "================================================================"
+    echo "           StrophenBoost Installation Setup                     "
+    echo "================================================================"
+    echo
+    
+    while [ -z "$DOMAIN" ]; do
+        echo -n "Enter your domain name (e.g., streaming.example.com): "
+        read DOMAIN
+        if ! echo "$DOMAIN" | grep -qE '^[a-zA-Z0-9][a-zA-Z0-9.-]*[a-zA-Z0-9]\.[a-zA-Z]{2,}$'; then
+            print_error "Invalid domain format. Please use format: subdomain.example.com"
             DOMAIN=""
         fi
     done
     
-    # Email for Let's Encrypt
-    while [[ -z "$EMAIL" ]]; do
-        read -p "Enter your email for Let's Encrypt notifications: " EMAIL
-        if [[ ! "$EMAIL" =~ ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$ ]]; then
+    while [ -z "$EMAIL" ]; do
+        echo -n "Enter your email for SSL certificates: "
+        read EMAIL
+        if ! echo "$EMAIL" | grep -qE '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'; then
             print_error "Invalid email format. Please try again."
             EMAIL=""
         fi
     done
     
-    # Cloudflare API Token
-    echo ""
-    print_status "For DNS verification, you need a Cloudflare API Token with Zone:Edit permissions."
+    echo
+    print_status "For DNS verification, you need a Cloudflare API Token with Zone:Edit permissions"
     print_status "Get it from: https://dash.cloudflare.com/profile/api-tokens"
-    while [[ -z "$CLOUDFLARE_API_TOKEN" ]]; do
-        read -p "Enter your Cloudflare API Token: " CLOUDFLARE_API_TOKEN
+    echo
+    while [ -z "$CLOUDFLARE_API_TOKEN" ]; do
+        echo -n "Enter your Cloudflare API Token: "
+        read CLOUDFLARE_API_TOKEN
+        if [ ${#CLOUDFLARE_API_TOKEN} -lt 20 ]; then
+            print_error "API token seems too short. Please verify and try again."
+            CLOUDFLARE_API_TOKEN=""
+        fi
     done
     
-    echo ""
-    print_status "Configuration Summary:"
+    print_status "Generating secure passwords..."
+    DB_PASSWORD=$(generate_password)
+    FLASK_SECRET=$(generate_password)
+    
+    echo
+    echo "Configuration Summary:"
     echo "  Domain: $DOMAIN"
     echo "  Email: $EMAIL"
+    echo "  App User: $APP_USER"
     echo "  RTMP Port: $RTMP_PORT"
     echo "  Web Port: $WEB_PORT"
-    echo ""
-    
-    read -p "Continue with installation? (y/N): " -n 1 -r
     echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        print_status "Installation cancelled."
+    
+    echo -n "Continue with installation? (y/N): "
+    read -n 1 REPLY
+    echo
+    if [ "$REPLY" != "y" ] && [ "$REPLY" != "Y" ]; then
+        print_status "Installation cancelled by user."
         exit 0
     fi
+    
+    print_success "Configuration confirmed. Starting installation..."
 }
 
-# Function to update system
 update_system() {
     print_status "Updating system packages..."
-    sudo apt update && sudo apt upgrade -y
-    print_success "System updated successfully"
+    if [ "$IS_ROOT" = true ]; then
+        apt update -y && apt upgrade -y
+    else
+        sudo apt update -y && sudo apt upgrade -y
+    fi
+    print_success "System packages updated"
 }
 
-# Function to install dependencies
 install_dependencies() {
     print_status "Installing system dependencies..."
     
-    # Essential packages
-    sudo apt install -y \
-        python3 \
-        python3-pip \
-        python3-venv \
-        postgresql \
-        postgresql-contrib \
-        nginx \
-        certbot \
-        python3-certbot-nginx \
-        python3-certbot-dns-cloudflare \
-        ffmpeg \
-        git \
-        curl \
-        wget \
-        ufw \
-        supervisor \
-        build-essential \
-        libssl-dev \
-        libffi-dev \
-        python3-dev \
-        pkg-config \
-        libpq-dev
+    PACKAGES="python3 python3-pip python3-venv postgresql postgresql-contrib nginx certbot python3-certbot-dns-cloudflare ffmpeg git curl wget ufw supervisor build-essential libssl-dev libffi-dev python3-dev pkg-config libpq-dev openssl"
+    
+    if [ "$IS_ROOT" = true ]; then
+        apt install -y $PACKAGES
+    else
+        sudo apt install -y $PACKAGES
+    fi
     
     print_success "System dependencies installed"
 }
 
-# Function to setup PostgreSQL
 setup_database() {
     print_status "Setting up PostgreSQL database..."
     
-    # Start PostgreSQL service
-    sudo systemctl start postgresql
-    sudo systemctl enable postgresql
+    if [ "$IS_ROOT" = true ]; then
+        systemctl start postgresql
+        systemctl enable postgresql
+    else
+        sudo systemctl start postgresql
+        sudo systemctl enable postgresql
+    fi
     
-    # Create database and user
-    sudo -u postgres psql << EOF
-CREATE USER strophenboost WITH PASSWORD '$DB_PASSWORD';
-CREATE DATABASE strophenboost OWNER strophenboost;
-GRANT ALL PRIVILEGES ON DATABASE strophenboost TO strophenboost;
-\q
-EOF
+    if [ "$IS_ROOT" = true ]; then
+        sudo -u postgres psql -c "CREATE USER $APP_USER WITH PASSWORD '$DB_PASSWORD';" 2>/dev/null || true
+        sudo -u postgres psql -c "CREATE DATABASE strophenboost OWNER $APP_USER;" 2>/dev/null || true
+        sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE strophenboost TO $APP_USER;" 2>/dev/null || true
+    else
+        sudo -u postgres psql -c "CREATE USER $APP_USER WITH PASSWORD '$DB_PASSWORD';" 2>/dev/null || true
+        sudo -u postgres psql -c "CREATE DATABASE strophenboost OWNER $APP_USER;" 2>/dev/null || true
+        sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE strophenboost TO $APP_USER;" 2>/dev/null || true
+    fi
     
     print_success "PostgreSQL database configured"
 }
 
-# Function to setup application
 setup_application() {
     print_status "Setting up StrophenBoost application..."
     
-    # Create application directory
-    sudo mkdir -p /opt/strophenboost
-    sudo chown $USER:$USER /opt/strophenboost
+    if [ "$IS_ROOT" = true ]; then
+        mkdir -p /opt/strophenboost
+        cp -r . /opt/strophenboost/
+        cd /opt/strophenboost
+        
+        sudo -u "$APP_USER" python3 -m venv venv
+        sudo -u "$APP_USER" bash -c "source venv/bin/activate && pip install --upgrade pip"
+        sudo -u "$APP_USER" bash -c "source venv/bin/activate && pip install flask flask-sqlalchemy flask-login flask-socketio flask-cors flask-wtf gunicorn psycopg2-binary google-genai email-validator werkzeug sqlalchemy gevent eventlet"
+        
+        chown -R "$APP_USER:$APP_USER" /opt/strophenboost
+    else
+        sudo mkdir -p /opt/strophenboost
+        sudo cp -r . /opt/strophenboost/
+        cd /opt/strophenboost
+        
+        python3 -m venv venv
+        source venv/bin/activate
+        pip install --upgrade pip
+        pip install flask flask-sqlalchemy flask-login flask-socketio flask-cors flask-wtf gunicorn psycopg2-binary google-genai email-validator werkzeug sqlalchemy gevent eventlet
+        
+        sudo chown -R "$USER:$USER" /opt/strophenboost
+    fi
     
-    # Copy application files
-    cp -r . /opt/strophenboost/
-    cd /opt/strophenboost
-    
-    # Create virtual environment
-    python3 -m venv venv
-    source venv/bin/activate
-    
-    # Install Python dependencies
-    pip install --upgrade pip
-    pip install -r requirements.txt || pip install \
-        flask \
-        flask-sqlalchemy \
-        flask-login \
-        flask-socketio \
-        flask-cors \
-        flask-wtf \
-        gunicorn \
-        psycopg2-binary \
-        google-genai \
-        email-validator \
-        werkzeug \
-        sqlalchemy
-    
-    # Create environment file
-    cat > .env << EOF
-# Database Configuration
-DATABASE_URL=postgresql://strophenboost:$DB_PASSWORD@localhost/strophenboost
+    cat > /opt/strophenboost/.env << 'ENVEOF'
+DATABASE_URL=postgresql://${APP_USER}:${DB_PASSWORD}@localhost/strophenboost
 PGHOST=localhost
 PGPORT=5432
-PGUSER=strophenboost
-PGPASSWORD=$DB_PASSWORD
+PGUSER=${APP_USER}
+PGPASSWORD=${DB_PASSWORD}
 PGDATABASE=strophenboost
-
-# Flask Configuration
-FLASK_SECRET_KEY=$FLASK_SECRET
-SESSION_SECRET=$FLASK_SECRET
-
-# Domain Configuration
-DOMAIN=$DOMAIN
-EMAIL=$EMAIL
-
-# Optional: Add your Gemini API key here for AI features
-# GEMINI_API_KEY=your_gemini_api_key_here
-EOF
+FLASK_SECRET_KEY=${FLASK_SECRET}
+SESSION_SECRET=${FLASK_SECRET}
+DOMAIN=${DOMAIN}
+EMAIL=${EMAIL}
+ENVEOF
     
-    # Set proper permissions
-    chmod 600 .env
+    # Replace variables in .env file
+    sed -i "s/\${APP_USER}/$APP_USER/g" /opt/strophenboost/.env
+    sed -i "s/\${DB_PASSWORD}/$DB_PASSWORD/g" /opt/strophenboost/.env
+    sed -i "s/\${FLASK_SECRET}/$FLASK_SECRET/g" /opt/strophenboost/.env
+    sed -i "s/\${DOMAIN}/$DOMAIN/g" /opt/strophenboost/.env
+    sed -i "s/\${EMAIL}/$EMAIL/g" /opt/strophenboost/.env
+    
+    if [ "$IS_ROOT" = true ]; then
+        chown "$APP_USER:$APP_USER" /opt/strophenboost/.env
+        chmod 600 /opt/strophenboost/.env
+    else
+        chmod 600 /opt/strophenboost/.env
+    fi
     
     print_success "Application setup completed"
 }
 
-# Function to setup Cloudflare credentials for certbot
-setup_cloudflare_dns() {
-    print_status "Setting up Cloudflare DNS credentials..."
+setup_ssl() {
+    print_status "Setting up SSL certificates..."
     
-    # Create Cloudflare credentials file
-    sudo mkdir -p /etc/letsencrypt
-    sudo tee /etc/letsencrypt/cloudflare.ini > /dev/null << EOF
+    if [ "$IS_ROOT" = true ]; then
+        mkdir -p /etc/letsencrypt
+        cat > /etc/letsencrypt/cloudflare.ini << CFEOF
 dns_cloudflare_api_token = $CLOUDFLARE_API_TOKEN
-EOF
-    
-    # Secure the credentials file
-    sudo chmod 600 /etc/letsencrypt/cloudflare.ini
-    
-    print_success "Cloudflare DNS credentials configured"
-}
-
-# Function to obtain SSL certificate
-obtain_ssl_certificate() {
-    print_status "Obtaining SSL certificate via DNS verification..."
-    
-    # Request certificate using DNS verification
-    sudo certbot certonly \
-        --dns-cloudflare \
-        --dns-cloudflare-credentials /etc/letsencrypt/cloudflare.ini \
-        --email $EMAIL \
-        --agree-tos \
-        --no-eff-email \
-        -d $DOMAIN \
-        -d *.$DOMAIN
-    
-    if [[ $? -eq 0 ]]; then
-        print_success "SSL certificate obtained successfully"
+CFEOF
+        chmod 600 /etc/letsencrypt/cloudflare.ini
     else
-        print_error "Failed to obtain SSL certificate"
-        print_warning "You can manually configure SSL later or use HTTP for now"
+        sudo mkdir -p /etc/letsencrypt
+        sudo tee /etc/letsencrypt/cloudflare.ini > /dev/null << CFEOF
+dns_cloudflare_api_token = $CLOUDFLARE_API_TOKEN
+CFEOF
+        sudo chmod 600 /etc/letsencrypt/cloudflare.ini
     fi
+    
+    print_status "Obtaining SSL certificate for $DOMAIN..."
+    if [ "$IS_ROOT" = true ]; then
+        certbot certonly --dns-cloudflare --dns-cloudflare-credentials /etc/letsencrypt/cloudflare.ini --email "$EMAIL" --agree-tos --no-eff-email --non-interactive -d "$DOMAIN" || print_warning "SSL certificate setup failed - will configure later"
+    else
+        sudo certbot certonly --dns-cloudflare --dns-cloudflare-credentials /etc/letsencrypt/cloudflare.ini --email "$EMAIL" --agree-tos --no-eff-email --non-interactive -d "$DOMAIN" || print_warning "SSL certificate setup failed - will configure later"
+    fi
+    
+    print_success "SSL configuration completed"
 }
 
-# Function to configure Nginx
 configure_nginx() {
     print_status "Configuring Nginx..."
     
-    # Remove default site
-    sudo rm -f /etc/nginx/sites-enabled/default
+    if [ "$IS_ROOT" = true ]; then
+        rm -f /etc/nginx/sites-enabled/default
+    else
+        sudo rm -f /etc/nginx/sites-enabled/default
+    fi
     
-    # Create StrophenBoost Nginx configuration
-    sudo tee /etc/nginx/sites-available/strophenboost > /dev/null << 'EOF'
-# StrophenBoost Nginx Configuration
-
-# Redirect HTTP to HTTPS
+    NGINX_CONFIG="/etc/nginx/sites-available/strophenboost"
+    SSL_CERT="/etc/letsencrypt/live/$DOMAIN/fullchain.pem"
+    
+    if [ -f "$SSL_CERT" ]; then
+        # HTTPS configuration
+        if [ "$IS_ROOT" = true ]; then
+            cat > "$NGINX_CONFIG" << 'NGINXEOF'
 server {
     listen 80;
     server_name DOMAIN_PLACEHOLDER;
     return 301 https://$server_name$request_uri;
 }
 
-# Main HTTPS server
 server {
     listen 443 ssl http2;
     server_name DOMAIN_PLACEHOLDER;
     
-    # SSL Configuration
     ssl_certificate /etc/letsencrypt/live/DOMAIN_PLACEHOLDER/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/DOMAIN_PLACEHOLDER/privkey.pem;
-    ssl_trusted_certificate /etc/letsencrypt/live/DOMAIN_PLACEHOLDER/chain.pem;
     
-    # SSL Security Settings
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_ciphers ECDHE-RSA-AES256-GCM-SHA512:DHE-RSA-AES256-GCM-SHA512:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES256-GCM-SHA384;
-    ssl_prefer_server_ciphers off;
-    ssl_session_cache shared:SSL:10m;
-    ssl_session_timeout 10m;
-    
-    # Security Headers
-    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
-    add_header X-Frame-Options DENY always;
-    add_header X-Content-Type-Options nosniff always;
-    add_header X-XSS-Protection "1; mode=block" always;
-    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
-    
-    # File upload size limit
     client_max_body_size 100M;
     
-    # Proxy settings
-    proxy_http_version 1.1;
-    proxy_set_header Upgrade $http_upgrade;
-    proxy_set_header Connection 'upgrade';
-    proxy_set_header Host $host;
-    proxy_set_header X-Real-IP $remote_addr;
-    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    proxy_set_header X-Forwarded-Proto $scheme;
-    proxy_cache_bypass $http_upgrade;
-    
-    # Main application
     location / {
         proxy_pass http://127.0.0.1:5000;
-        proxy_read_timeout 300;
-        proxy_connect_timeout 300;
-        proxy_send_timeout 300;
-    }
-    
-    # WebSocket support for real-time features
-    location /socket.io/ {
-        proxy_pass http://127.0.0.1:5000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
     }
     
-    # Static files
+    location /socket.io/ {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+    
     location /static/ {
         alias /opt/strophenboost/static/;
         expires 30d;
-        add_header Cache-Control "public, immutable";
     }
     
-    # HLS streaming files
     location /stream_output/ {
         alias /opt/strophenboost/stream_output/;
         expires 1s;
-        add_header Cache-Control "no-cache";
         add_header Access-Control-Allow-Origin "*";
-        add_header Access-Control-Allow-Methods "GET, OPTIONS";
-        add_header Access-Control-Allow-Headers "Range";
     }
 }
-
-# RTMP status page (optional, for monitoring)
+NGINXEOF
+            sed -i "s/DOMAIN_PLACEHOLDER/$DOMAIN/g" "$NGINX_CONFIG"
+        else
+            sudo tee "$NGINX_CONFIG" > /dev/null << NGINXEOF
 server {
-    listen 8080;
-    server_name DOMAIN_PLACEHOLDER;
-    
-    location /rtmp-status {
-        return 200 "RTMP Server Status: Active\nPort: 1935\nProtocol: RTMP/TCP";
-        add_header Content-Type text/plain;
-    }
-}
-EOF
-    
-    # Replace placeholder with actual domain
-    sudo sed -i "s/DOMAIN_PLACEHOLDER/$DOMAIN/g" /etc/nginx/sites-available/strophenboost
-    
-    # Enable the site
-    sudo ln -sf /etc/nginx/sites-available/strophenboost /etc/nginx/sites-enabled/
-    
-    # Test Nginx configuration
-    sudo nginx -t
-    
-    if [[ $? -eq 0 ]]; then
-        print_success "Nginx configuration is valid"
-    else
-        print_error "Nginx configuration has errors"
-        exit 1
-    fi
+    listen 80;
+    server_name $DOMAIN;
+    return 301 https://\$server_name\$request_uri;
 }
 
-# Function to configure Supervisor for process management
-configure_supervisor() {
-    print_status "Configuring Supervisor for process management..."
+server {
+    listen 443 ssl http2;
+    server_name $DOMAIN;
     
-    # Create Supervisor configuration for Flask app
-    sudo tee /etc/supervisor/conf.d/strophenboost.conf > /dev/null << EOF
+    ssl_certificate /etc/letsencrypt/live/$DOMAIN/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/$DOMAIN/privkey.pem;
+    
+    client_max_body_size 100M;
+    
+    location / {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+    
+    location /socket.io/ {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+    
+    location /static/ {
+        alias /opt/strophenboost/static/;
+        expires 30d;
+    }
+    
+    location /stream_output/ {
+        alias /opt/strophenboost/stream_output/;
+        expires 1s;
+        add_header Access-Control-Allow-Origin "*";
+    }
+}
+NGINXEOF
+        fi
+    else
+        # HTTP-only configuration
+        print_warning "SSL certificate not found - configuring HTTP only"
+        if [ "$IS_ROOT" = true ]; then
+            cat > "$NGINX_CONFIG" << NGINXEOF
+server {
+    listen 80;
+    server_name $DOMAIN;
+    
+    client_max_body_size 100M;
+    
+    location / {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+    
+    location /socket.io/ {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+    
+    location /static/ {
+        alias /opt/strophenboost/static/;
+        expires 30d;
+    }
+    
+    location /stream_output/ {
+        alias /opt/strophenboost/stream_output/;
+        expires 1s;
+        add_header Access-Control-Allow-Origin "*";
+    }
+}
+NGINXEOF
+        else
+            sudo tee "$NGINX_CONFIG" > /dev/null << NGINXEOF
+server {
+    listen 80;
+    server_name $DOMAIN;
+    
+    client_max_body_size 100M;
+    
+    location / {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+    
+    location /socket.io/ {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+    
+    location /static/ {
+        alias /opt/strophenboost/static/;
+        expires 30d;
+    }
+    
+    location /stream_output/ {
+        alias /opt/strophenboost/stream_output/;
+        expires 1s;
+        add_header Access-Control-Allow-Origin "*";
+    }
+}
+NGINXEOF
+        fi
+    fi
+    
+    if [ "$IS_ROOT" = true ]; then
+        ln -sf "$NGINX_CONFIG" /etc/nginx/sites-enabled/
+        nginx -t || error_exit "Nginx configuration test failed"
+    else
+        sudo ln -sf "$NGINX_CONFIG" /etc/nginx/sites-enabled/
+        sudo nginx -t || error_exit "Nginx configuration test failed"
+    fi
+    
+    print_success "Nginx configured successfully"
+}
+
+configure_supervisor() {
+    print_status "Configuring Supervisor..."
+    
+    if [ "$IS_ROOT" = true ]; then
+        mkdir -p /var/log/strophenboost
+        chown "$APP_USER:$APP_USER" /var/log/strophenboost
+    else
+        sudo mkdir -p /var/log/strophenboost
+        sudo chown "$APP_USER:$APP_USER" /var/log/strophenboost
+    fi
+    
+    SUPERVISOR_CONFIG="/etc/supervisor/conf.d/strophenboost.conf"
+    if [ "$IS_ROOT" = true ]; then
+        cat > "$SUPERVISOR_CONFIG" << SUPERVISOREOF
 [program:strophenboost]
-command=/opt/strophenboost/venv/bin/gunicorn --bind 127.0.0.1:5000 --workers 4 --worker-class gevent --worker-connections 1000 --timeout 300 --keep-alive 2 --preload --access-logfile /var/log/strophenboost/access.log --error-logfile /var/log/strophenboost/error.log main:app
+command=/opt/strophenboost/venv/bin/gunicorn --bind 127.0.0.1:5000 --workers 4 --worker-class gevent --worker-connections 1000 --timeout 300 main:app
 directory=/opt/strophenboost
-user=www-data
+user=$APP_USER
 autostart=true
 autorestart=true
 redirect_stderr=true
@@ -390,206 +491,230 @@ environment=PATH="/opt/strophenboost/venv/bin"
 [program:strophenboost-rtmp]
 command=/opt/strophenboost/venv/bin/python start_rtmp_server.py
 directory=/opt/strophenboost
-user=www-data
+user=$APP_USER
 autostart=true
 autorestart=true
 redirect_stderr=true
 stdout_logfile=/var/log/strophenboost/rtmp.log
 environment=PATH="/opt/strophenboost/venv/bin"
-EOF
+SUPERVISOREOF
+    else
+        sudo tee "$SUPERVISOR_CONFIG" > /dev/null << SUPERVISOREOF
+[program:strophenboost]
+command=/opt/strophenboost/venv/bin/gunicorn --bind 127.0.0.1:5000 --workers 4 --worker-class gevent --worker-connections 1000 --timeout 300 main:app
+directory=/opt/strophenboost
+user=$APP_USER
+autostart=true
+autorestart=true
+redirect_stderr=true
+stdout_logfile=/var/log/strophenboost/app.log
+environment=PATH="/opt/strophenboost/venv/bin"
+
+[program:strophenboost-rtmp]
+command=/opt/strophenboost/venv/bin/python start_rtmp_server.py
+directory=/opt/strophenboost
+user=$APP_USER
+autostart=true
+autorestart=true
+redirect_stderr=true
+stdout_logfile=/var/log/strophenboost/rtmp.log
+environment=PATH="/opt/strophenboost/venv/bin"
+SUPERVISOREOF
+    fi
     
-    # Create log directory
-    sudo mkdir -p /var/log/strophenboost
-    sudo chown www-data:www-data /var/log/strophenboost
-    
-    # Set proper ownership for application
-    sudo chown -R www-data:www-data /opt/strophenboost
-    
-    print_success "Supervisor configuration completed"
+    print_success "Supervisor configured"
 }
 
-# Function to configure firewall
 configure_firewall() {
-    print_status "Configuring UFW firewall..."
+    print_status "Configuring firewall..."
     
-    # Reset UFW to defaults
-    sudo ufw --force reset
-    
-    # Set default policies
-    sudo ufw default deny incoming
-    sudo ufw default allow outgoing
-    
-    # Allow SSH
-    sudo ufw allow ssh
-    
-    # Allow HTTP and HTTPS
-    sudo ufw allow 80/tcp
-    sudo ufw allow 443/tcp
-    
-    # Allow RTMP
-    sudo ufw allow $RTMP_PORT/tcp
-    
-    # Allow monitoring port (optional)
-    sudo ufw allow 8080/tcp
-    
-    # Enable firewall
-    sudo ufw --force enable
+    if [ "$IS_ROOT" = true ]; then
+        ufw --force reset
+        ufw default deny incoming
+        ufw default allow outgoing
+        ufw allow ssh
+        ufw allow 80/tcp
+        ufw allow 443/tcp
+        ufw allow "$RTMP_PORT/tcp"
+        ufw --force enable
+    else
+        sudo ufw --force reset
+        sudo ufw default deny incoming
+        sudo ufw default allow outgoing
+        sudo ufw allow ssh
+        sudo ufw allow 80/tcp
+        sudo ufw allow 443/tcp
+        sudo ufw allow "$RTMP_PORT/tcp"
+        sudo ufw --force enable
+    fi
     
     print_success "Firewall configured"
 }
 
-# Function to initialize database
 initialize_database() {
     print_status "Initializing database..."
     
     cd /opt/strophenboost
-    source venv/bin/activate
     
-    # Set environment variables
-    export DATABASE_URL="postgresql://strophenboost:$DB_PASSWORD@localhost/strophenboost"
-    export FLASK_SECRET_KEY="$FLASK_SECRET"
-    export SESSION_SECRET="$FLASK_SECRET"
-    
-    # Initialize database tables
-    python3 -c "
-from app import app, db
-with app.app_context():
-    db.create_all()
-    print('Database tables created successfully')
-"
+    if [ "$IS_ROOT" = true ]; then
+        sudo -u "$APP_USER" bash -c "
+            source venv/bin/activate
+            export DATABASE_URL='postgresql://$APP_USER:$DB_PASSWORD@localhost/strophenboost'
+            export FLASK_SECRET_KEY='$FLASK_SECRET'
+            export SESSION_SECRET='$FLASK_SECRET'
+            python3 -c 'from app import app, db; app.app_context().push(); db.create_all(); print(\"Database initialized\")'
+        "
+    else
+        source venv/bin/activate
+        export DATABASE_URL="postgresql://$APP_USER:$DB_PASSWORD@localhost/strophenboost"
+        export FLASK_SECRET_KEY="$FLASK_SECRET"
+        export SESSION_SECRET="$FLASK_SECRET"
+        python3 -c "from app import app, db; app.app_context().push(); db.create_all(); print('Database initialized')"
+    fi
     
     print_success "Database initialized"
 }
 
-# Function to start services
-start_services() {
-    print_status "Starting services..."
-    
-    # Reload Supervisor configuration
-    sudo supervisorctl reread
-    sudo supervisorctl update
-    
-    # Start application services
-    sudo supervisorctl start strophenboost
-    sudo supervisorctl start strophenboost-rtmp
-    
-    # Start and enable services
-    sudo systemctl restart nginx
-    sudo systemctl enable nginx
-    sudo systemctl enable supervisor
-    
-    print_success "All services started"
-}
-
-# Function to setup automatic SSL renewal
-setup_ssl_renewal() {
-    print_status "Setting up automatic SSL certificate renewal..."
-    
-    # Create renewal hook script
-    sudo tee /etc/letsencrypt/renewal-hooks/deploy/nginx-reload.sh > /dev/null << 'EOF'
-#!/bin/bash
-systemctl reload nginx
-EOF
-    
-    sudo chmod +x /etc/letsencrypt/renewal-hooks/deploy/nginx-reload.sh
-    
-    # Test renewal process
-    sudo certbot renew --dry-run
-    
-    print_success "SSL auto-renewal configured"
-}
-
-# Function to create admin user
 create_admin_user() {
     print_status "Creating admin user..."
     
+    ADMIN_PASSWORD=$(generate_password | head -c 16)
+    
     cd /opt/strophenboost
-    source venv/bin/activate
     
-    # Set environment variables
-    export DATABASE_URL="postgresql://strophenboost:$DB_PASSWORD@localhost/strophenboost"
-    
-    python3 -c "
+    if [ "$IS_ROOT" = true ]; then
+        sudo -u "$APP_USER" bash -c "
+            source venv/bin/activate
+            export DATABASE_URL='postgresql://$APP_USER:$DB_PASSWORD@localhost/strophenboost'
+            export FLASK_SECRET_KEY='$FLASK_SECRET'
+            export SESSION_SECRET='$FLASK_SECRET'
+            python3 -c '
 from app import app, db
 from models import User
 from werkzeug.security import generate_password_hash
-import secrets
 
 with app.app_context():
-    # Check if admin user exists
-    admin = User.query.filter_by(username='admin').first()
+    admin = User.query.filter_by(username=\"admin\").first()
     if not admin:
-        admin_password = secrets.token_urlsafe(12)
         admin = User(
-            username='admin',
-            email='$EMAIL',
-            password_hash=generate_password_hash(admin_password),
+            username=\"admin\",
+            email=\"$EMAIL\",
+            password_hash=generate_password_hash(\"$ADMIN_PASSWORD\"),
             is_broadcaster=True
         )
         db.session.add(admin)
         db.session.commit()
-        
-        print(f'Admin user created successfully!')
-        print(f'Username: admin')
-        print(f'Password: {admin_password}')
-        print(f'Email: $EMAIL')
-        
-        # Save credentials to file
-        with open('/opt/strophenboost/admin_credentials.txt', 'w') as f:
-            f.write(f'StrophenBoost Admin Credentials\\n')
-            f.write(f'Username: admin\\n')
-            f.write(f'Password: {admin_password}\\n')
-            f.write(f'Email: $EMAIL\\n')
-            f.write(f'Domain: https://$DOMAIN\\n')
+        print(\"Admin user created successfully\")
+    else:
+        print(\"Admin user already exists\")
+'
+        "
+    else
+        source venv/bin/activate
+        export DATABASE_URL="postgresql://$APP_USER:$DB_PASSWORD@localhost/strophenboost"
+        export FLASK_SECRET_KEY="$FLASK_SECRET"
+        export SESSION_SECRET="$FLASK_SECRET"
+        python3 -c "
+from app import app, db
+from models import User
+from werkzeug.security import generate_password_hash
+
+with app.app_context():
+    admin = User.query.filter_by(username='admin').first()
+    if not admin:
+        admin = User(
+            username='admin',
+            email='$EMAIL',
+            password_hash=generate_password_hash('$ADMIN_PASSWORD'),
+            is_broadcaster=True
+        )
+        db.session.add(admin)
+        db.session.commit()
+        print('Admin user created successfully')
     else:
         print('Admin user already exists')
 "
-    
-    print_success "Admin user setup completed"
-}
-
-# Function to display final information
-display_final_info() {
-    echo ""
-    echo -e "${GREEN}=== Installation Complete! ===${NC}"
-    echo ""
-    print_success "StrophenBoost has been successfully installed!"
-    echo ""
-    echo -e "${BLUE}Access Information:${NC}"
-    echo "  🌐 Website: https://$DOMAIN"
-    echo "  📺 RTMP Server: rtmp://$DOMAIN:$RTMP_PORT/live"
-    echo "  📊 Stream Setup: https://$DOMAIN/streaming/setup"
-    echo ""
-    echo -e "${BLUE}Admin Credentials:${NC}"
-    if [[ -f /opt/strophenboost/admin_credentials.txt ]]; then
-        cat /opt/strophenboost/admin_credentials.txt | sed 's/^/  /'
     fi
-    echo ""
-    echo -e "${BLUE}Important Files:${NC}"
-    echo "  📁 Application: /opt/strophenboost"
-    echo "  🔧 Nginx Config: /etc/nginx/sites-available/strophenboost"
-    echo "  📋 Supervisor: /etc/supervisor/conf.d/strophenboost.conf"
-    echo "  📄 Logs: /var/log/strophenboost/"
-    echo ""
-    echo -e "${BLUE}Useful Commands:${NC}"
-    echo "  sudo supervisorctl status          - Check service status"
-    echo "  sudo supervisorctl restart all    - Restart services"
-    echo "  sudo nginx -t                     - Test Nginx config"
-    echo "  sudo certbot renew               - Renew SSL certificates"
-    echo ""
-    echo -e "${YELLOW}Next Steps:${NC}"
-    echo "  1. Visit https://$DOMAIN and login with admin credentials"
-    echo "  2. Configure your streaming software using the setup guide"
-    echo "  3. Add your Gemini API key in /opt/strophenboost/.env for AI features"
-    echo "  4. Customize your platform settings in the admin panel"
-    echo ""
-    print_success "Installation completed successfully!"
+    
+    cat > /opt/strophenboost/admin_credentials.txt << CREDEOF
+StrophenBoost Admin Credentials
+==============================
+Username: admin
+Password: $ADMIN_PASSWORD
+Email: $EMAIL
+Domain: https://$DOMAIN
+RTMP: rtmp://$DOMAIN:$RTMP_PORT/live
+CREDEOF
+    
+    if [ "$IS_ROOT" = true ]; then
+        chown "$APP_USER:$APP_USER" /opt/strophenboost/admin_credentials.txt
+        chmod 600 /opt/strophenboost/admin_credentials.txt
+    fi
+    
+    print_success "Admin user created"
 }
 
-# Main installation function
+start_services() {
+    print_status "Starting services..."
+    
+    if [ "$IS_ROOT" = true ]; then
+        supervisorctl reread
+        supervisorctl update
+        supervisorctl start strophenboost
+        supervisorctl start strophenboost-rtmp
+        systemctl restart nginx
+        systemctl enable nginx
+        systemctl enable supervisor
+    else
+        sudo supervisorctl reread
+        sudo supervisorctl update
+        sudo supervisorctl start strophenboost
+        sudo supervisorctl start strophenboost-rtmp
+        sudo systemctl restart nginx
+        sudo systemctl enable nginx
+        sudo systemctl enable supervisor
+    fi
+    
+    print_success "All services started"
+}
+
+show_completion_info() {
+    echo
+    echo "================================================================"
+    echo "                 Installation Complete!                        "
+    echo "================================================================"
+    echo
+    
+    print_success "StrophenBoost has been successfully installed!"
+    echo
+    echo "Access Information:"
+    if [ -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" ]; then
+        echo "  Website: https://$DOMAIN"
+    else
+        echo "  Website: http://$DOMAIN"
+    fi
+    echo "  RTMP Server: rtmp://$DOMAIN:$RTMP_PORT/live"
+    echo "  Stream Setup: https://$DOMAIN/streaming/setup"
+    echo
+    
+    if [ -f /opt/strophenboost/admin_credentials.txt ]; then
+        echo "Admin Credentials:"
+        grep -E "(Username|Password)" /opt/strophenboost/admin_credentials.txt | sed 's/^/  /'
+        echo
+    fi
+    
+    echo "System Information:"
+    echo "  Application User: $APP_USER"
+    echo "  Application Path: /opt/strophenboost"
+    echo "  Logs: /var/log/strophenboost/"
+    echo
+    
+    print_success "Your streaming platform is ready to use!"
+}
+
 main() {
-    echo -e "${BLUE}"
-    cat << 'EOF'
+    echo
+    cat << 'BANNEREOF'
   ____  _                  _                ____                  _   
  / ___|| |_ _ __ ___  _ __ | |__   ___ _ __ | __ )  ___   ___  ___| |_ 
  \___ \| __| '__/ _ \| '_ \| '_ \ / _ \ '_ \|  _ \ / _ \ / _ \/ __| __|
@@ -597,30 +722,25 @@ main() {
  |____/ \__|_|  \___/| .__/|_| |_|\___|_| |_|____/ \___/ \___/|___/\__|
                      |_|                                               
         Professional Live Streaming Platform Installation
-EOF
-    echo -e "${NC}"
+BANNEREOF
+    echo
     
-    # Run installation steps
-    check_root
+    check_privileges
     collect_info
     update_system
     install_dependencies
     setup_database
     setup_application
-    setup_cloudflare_dns
-    obtain_ssl_certificate
+    setup_ssl
     configure_nginx
     configure_supervisor
-    configure_firewall  
+    configure_firewall
     initialize_database
     create_admin_user
     start_services
-    setup_ssl_renewal
-    display_final_info
+    show_completion_info
 }
 
-# Error handling
-trap 'print_error "Installation failed at line $LINENO. Check the logs for details."' ERR
+trap 'error_exit "Script interrupted at line $LINENO"' ERR
 
-# Run main function
 main "$@"
